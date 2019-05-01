@@ -179,7 +179,7 @@ class SimpleGraph(object):
 
 
 class WeightedGraph:
-    def __init__(self, directed=False, def_weight=0.0):
+    def __init__(self, directed=False, def_weight=1.0):
         self.__G = SimpleGraph(directed=directed)
         self.__def_wt = def_weight
         self.__vattrib_lookup = dict()
@@ -279,6 +279,10 @@ class WeightedGraph:
         return self.__G.adjacency()
 
 
+
+'''
+Test cases
+'''
 if __name__ == "__main__":
     edges = [('A', 'B'), ('A', 'E'), ('A', 'C'),
              ('D', 'B'), ('E', 'D'), ('B', 'E'),

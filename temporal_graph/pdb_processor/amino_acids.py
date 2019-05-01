@@ -6,7 +6,7 @@ and also supports their associated property index.
 __author__  = "Sumanta Mukherjee"
 __version__ = 1.0
 
-__all__ = ['AminoAcid', 'get_amino']
+__all__ = ['AminoAcid', 'get_amino', 'valid_amino_acids']
 
 
 __amino_acids__ = {"A": "ALA", "C": "CYS", "D": "ASP",
@@ -93,7 +93,7 @@ __aa_volume__ = {"A":  88.300, "C": 112.400, "D": 110.800,
                  "W": 227.000, "Y": 193.000}
 
 
-def valid_amino_acids( one_letter = True ):
+def valid_amino_acids(one_letter=True):
     if one_letter is True:
         return sorted(__amino_acids__.keys())
     else:
@@ -139,7 +139,7 @@ class AminoAcid():
         return __aa_pI__[self.__aa]
 
 
-def get_amino( amino_name ):
+def get_amino(amino_name):
     assert isinstance(amino_name, str)
     amino_name = amino_name.strip()
     if len(amino_name) == 3:

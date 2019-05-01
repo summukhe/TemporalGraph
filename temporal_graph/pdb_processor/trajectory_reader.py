@@ -4,15 +4,15 @@ trace from trajectory pdb files.
 """
 
 import os
-from .pdb_structure import CaTrace
+from temporal_graph.pdb_processor import CaTrace
 
 __author__  = "Sumanta Mukherjee"
 __version__ = "1.0"
 
-__all__ = ['read_catrace_from_trajectory']
+__all__ = ['read_trajectory_catrace']
 
 
-def read_catrace_from_trajectory(pdbfile):
+def read_trajectory_catrace(pdbfile):
     assert os.path.isfile(pdbfile)
     chain, modelname = None, None
     pdbname = os.path.basename(pdbfile).split('.')[0]
@@ -64,11 +64,10 @@ def read_catrace_from_trajectory(pdbfile):
     return trajectory
 
 
-"""
 if __name__ == "__main__":
-    pdbfile = '/home/sumanta/Project/structural_dynamics/second_round_analysis/dynamics/electrostatics_analysis/1A1V/mode_catraj_10.pdb'
-    trajectory = read_catrace_from_trajectory(pdbfile)
-    print( 'Number of snapshots: %d' % len(trajectory))
+    pdbfile="/home/sumanta/Project/structural_dynamics/second_round_analysis/" + \
+            "dynamics/electrostatics_analysis/1A1V/mode_catraj_10.pdb"
+    trajectory = read_trajectory_catrace(pdbfile)
+    print('Number of snapshots: %d' % len(trajectory))
     for i in range(len(trajectory)):
         print('%s' % trajectory[i]['A'])
-"""
