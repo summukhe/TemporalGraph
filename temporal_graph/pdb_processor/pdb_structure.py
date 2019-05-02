@@ -97,7 +97,7 @@ class CaTrace:
                                                                                  float(self.__structure[r]['y']),
                                                                                  float(self.__structure[r]['z']),
                                                                                  1.0,
-                                                                                 float(self._bfactors[r]) )
+                                                                                 float(self.__bfactor[r]))
             fh.write("%s\n" % line)
 
     def __len__(self):
