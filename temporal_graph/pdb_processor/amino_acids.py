@@ -108,6 +108,14 @@ class AminoAcid():
     def __str__(self):
         return '%s' % __amino_acids__[self.__aa]
 
+    def __eq__(self, other):
+        if isinstance(other, AminoAcid):
+            return self.__aa == other.__aa
+        elif isinstance(other, str):
+            return self.__aa == other
+        else:
+            return False
+
     def name(self, one_letter_code=False):
         if one_letter_code is True:
             return self.__aa
@@ -151,3 +159,4 @@ def get_amino(amino_name):
         assert len(amino_name) == 1 and amino_name in __amino_acids__
         return AminoAcid(aa_type=amino_name)
     raise KeyError("Invalid amino name: %s" % amino_name)
+

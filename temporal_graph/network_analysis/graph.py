@@ -279,25 +279,3 @@ class WeightedGraph:
         return self.__G.adjacency()
 
 
-
-'''
-Test cases
-'''
-if __name__ == "__main__":
-    edges = [('A', 'B'), ('A', 'E'), ('A', 'C'),
-             ('D', 'B'), ('E', 'D'), ('B', 'E'),
-             ('G', 'H'), ('H', 'I'), ('G', 'K')]
-    g = WeightedGraph(directed=True)
-
-    print(dir(g))
-    for v1, v2 in edges:
-        g.add_edge(v1, v2)
-    print(g.vertices())
-    print(g.adjacency())
-    print(g.components())
-    print(g.is_connected('A', 'K'))
-    print(g.edges())
-    print('Order: %d and Size: %d' % (g.order(), g.size()))
-    g.del_vertex('A')
-    print(g.edges())
-    print('Order: %d and Size: %d' % (g.order(), g.size()))
