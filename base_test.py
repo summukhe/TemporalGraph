@@ -30,9 +30,15 @@ if __name__ == "__main__":
         rnasite_residues = [int(r) for r in f.readlines()]
     rna_site_residues = [trajectory[idx]['A'].key(r) for r in rnasite_residues if r in residue_ids]
 
+    ec, cuts = between_site_residues_by_mincut(trajectory[0]['A'],
+                                               site1=atp_site_residues,
+                                               site2=rna_site_residues)
+    print("Total valid edges: %d" % ec)
+    print(cuts)
+
     g = contact_energy_graph(trajectory[0]['A'], contact_radius=8)
     pulse = PeriodicPulse(ts=0, span=5, periods=25, strength=10)
-    n = np.minimum(1000, g.order())
+    n = np.minimum(1000, g.order)
     process = DiffusionOnStaticGraph(dissipation_rate=0.1)
     process.start(g, atp_site_residues, pulse)
     process.n_steps(n=n)

@@ -1,2 +1,3 @@
 from .graph import *
-from .structure_graph import *
+from .graph_adapter import *
+from .graph_algorithms import *

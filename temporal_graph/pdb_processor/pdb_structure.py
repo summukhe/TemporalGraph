@@ -51,6 +51,7 @@ class CaTrace:
     def chain(self):
         return self.__chain_id
 
+    @property
     def size(self):
         return len(self.__structure)
 
@@ -167,6 +168,7 @@ class PDBStructure:
     def chain(self):
         return self.__chain_id
 
+    @property
     def size(self):
         return len(self.__structure)
 

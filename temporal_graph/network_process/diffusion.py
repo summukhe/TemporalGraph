@@ -30,13 +30,13 @@ class DiffusionOnStaticGraph:
         assert self.__G is not None
         assert isinstance(self.__G, WeightedGraph)
         self.__time = 0
-        self.__vertex_history = {v: [0.] for v in self.__G.vertices()}
+        self.__vertex_history = {v: [0.] for v in self.__G.vertices}
         self.__vertex_attenuation = {}
-        self.__max_degree = np.max([self.__G.out_degree(v) for v in self.__G.vertices()])
+        self.__max_degree = np.max([self.__G.out_degree(v) for v in self.__G.vertices])
         self.__time_array = list([self.__time])
         self.__active_nodes = set()
         self.__visit = dict()
-        for v in self.__G.vertices():
+        for v in self.__G.vertices:
             d = self.__G.out_degree(v)
             f = (self.__max_degree - d) * 1.0 * self.__dissipation_rate / self.__max_degree
             self.__vertex_attenuation[v] = f
@@ -118,14 +118,17 @@ class DiffusionOnStaticGraph:
         if v in self.__blocked:
             self.__blocked.remove(v)
 
+    @property
     def curr_time(self):
         return self.__time
 
+    @property
     def vertices(self):
         if self.__G is not None:
-            return self.__G.vertices()
+            return self.__G.vertices
         return []
 
+    @property
     def edges(self):
         if self.__G is not None:
             return self.__G.edges()
@@ -193,7 +196,7 @@ def analyze_vertex_contribution(g,
                                 dissipation_rate=0,
                                 min_variation_score=0,
                                 cycles=500):
-    logger = logging.getLogger('vertex_contribution')
+    logger = logging.getLogger('network_process.analyze_vertex_contribution')
     assert isinstance(g, WeightedGraph)
     assert isinstance(pulse, SignalInput)
     assert cycles > 0
@@ -207,7 +210,7 @@ def analyze_vertex_contribution(g,
     assert len(refined_end) > 0
 
     assert len(set(refined_start).intersection(set(refined_end))) == 0
-    vertices = g.vertices()
+    vertices = g.vertices
 
     if isinstance(contrib_nodes, list):
         contrib_nodes = [v for v in contrib_nodes if g.is_vertex(v)]

@@ -78,12 +78,15 @@ class SimpleGraph(object):
             return True
         return False
 
+    @property
     def order(self):
         return len(self.__vertex)
 
+    @property
     def size(self):
         return self.__edge_count
 
+    @property
     def edges(self):
         E = list()
         for v1 in self.__out_edges.keys():
@@ -92,11 +95,13 @@ class SimpleGraph(object):
                     E.append((v1, v2, self.__out_edges[v1][v2]))
         return [(u, v) for u, v, _ in sorted(E, key=lambda x: x[2])]
 
+    @property
     def vertices(self):
         return sorted(list(self.__vertex))
 
+    @property
     def adjacency(self):
-        vs = self.vertices()
+        vs = self.vertices
         adj = pd.DataFrame(0, index=vs, columns=vs, dtype=np.int)
         for v1 in vs:
             for v2 in self.__out_edges[v1].keys():
@@ -139,6 +144,10 @@ class SimpleGraph(object):
 
     def is_vertex(self, v):
         return v in self.__vertex
+
+    @property
+    def is_directed(self):
+        return self.__directed
 
     def components(self):
         def find_root(node, root):
@@ -220,11 +229,17 @@ class WeightedGraph:
             return self.__G.del_vertex(v)
         return False
 
+    @property
     def size(self):
-        return self.__G.size()
+        return self.__G.size
 
+    @property
     def order(self):
-        return self.__G.order()
+        return self.__G.order
+
+    @property
+    def is_directed(self):
+        return self.__G.is_directed
 
     def weight(self, src, dst):
         e_id = self.__G.edge_id(src, dst)
@@ -237,19 +252,22 @@ class WeightedGraph:
             return self.__vattrib_lookup[v]
         return None
 
+    @property
     def weight_matrix(self):
-        vs = self.vertices()
+        vs = self.vertices
         wts = pd.DataFrame(0, index=vs, columns=vs)
         for vi in vs:
             for vj, eid in self.__out_edges[vi].items():
                 wts.loc[vi, vj] = self.__eweight_lookup[eid]
         return wts
 
+    @property
     def edges(self):
-        return self.__G.edges()
+        return self.__G.edges
 
+    @property
     def vertices(self):
-        return self.__G.vertices()
+        return self.__G.vertices
 
     def in_degree(self, v):
         return self.__G.in_degree(v)
@@ -275,7 +293,8 @@ class WeightedGraph:
     def is_connected(self, vi, vj):
         return self.__G.is_connected(vi, vj)
 
+    @property
     def adjacency(self):
-        return self.__G.adjacency()
+        return self.__G.adjacency
 
 
