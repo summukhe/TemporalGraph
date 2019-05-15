@@ -4,7 +4,6 @@ from temporal_graph.pdb_processor import *
 from temporal_graph.network_analysis import *
 from temporal_graph.structure_network.structure_graph import *
 
-__author__ = "Sumanta Mukherjee"
 __all__ = ['between_site_residues_by_stpath',
            'between_site_residues_by_mincut']
 
@@ -16,7 +15,7 @@ def between_site_residues_by_stpath(pdb_structure,
                                     contact_radius=12):
     assert isinstance(pdb_structure, PDBStructure)
     assert isinstance(site1, list) and isinstance(site2, list)
-    residue_key = [pdb_structure.key(r) for r in pdb_structure.residue_ids()]
+    residue_key = [pdb_structure.key(r) for r in pdb_structure.residue_ids]
     for s in site1 + site2:
         assert s in residue_key
     if type == 'energy':
@@ -42,7 +41,7 @@ def between_site_residues_by_mincut(pdb_structure,
                                     contact_radius=12):
     assert isinstance(pdb_structure, PDBStructure)
     assert isinstance(site1, list) and isinstance(site2, list)
-    residue_key = [pdb_structure.key(r) for r in pdb_structure.residue_ids()]
+    residue_key = [pdb_structure.key(r) for r in pdb_structure.residue_ids]
     for s in site1 + site2:
         assert s in residue_key
     if type == 'energy':
@@ -53,7 +52,7 @@ def between_site_residues_by_mincut(pdb_structure,
                           cutoff=DistanceCutoff(def_cutoff=contact_radius),
                           potential='mj')
     g_inv = weight_inversion(g)
-    cuts = maxflow(g_inv, src=site1, tgt=site2, weight=False)
+    cuts = maxflow(g_inv, src=site1, tgt=site2, weight=True)
     assert isinstance(cuts, dict)
     residue_marking, valid_edges = dict(), 0
     all_sites = set(site1 + site2)

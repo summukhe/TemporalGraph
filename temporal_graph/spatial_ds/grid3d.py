@@ -2,7 +2,6 @@ import numpy as np
 from copy import deepcopy
 
 
-__author__ = "Sumanta Mukherjee"
 __all__ = ['Coordinate3d', 'distance', 'Grid3D']
 
 

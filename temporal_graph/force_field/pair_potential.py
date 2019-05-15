@@ -1,5 +1,5 @@
 import numpy as np
-from .amino_acids import AminoAcid, get_amino, valid_amino_acids
+from temporal_graph.pdb_processor.amino_acids import AminoAcid, get_amino, valid_amino_acids
 
 __author__ = "Sumanta Mukherjee"
 __all__ = ['get_pair_potential', 'supported_potentials']

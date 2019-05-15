@@ -1,15 +1,56 @@
 import logging
 import numpy as np
 import pandas as pd
-from copy import deepcopy
 from .graph import *
 from .graph_adapter import *
 
 
-__author__ = "Sumanta Mukherjee"
-__all__ = ['shortest_path', 'get_all_shortest_paths',
+__all__ = ['diameter', 'betweenness', 'edge_betweenness',
+           'shortest_path', 'get_all_shortest_paths',
            'between_groups_centrality', 'gomory_hu_cuts',
            'maxflow', 'weight_inversion']
+
+
+def diameter(g, weight=True):
+    ig = to_igraph(g)
+    weighted = ig.is_weighted() and weight
+    weights = 'weight' if weighted else None
+    return ig.diameter(directed=ig.is_directed(),
+                       unconn=ig.is_connected(),
+                       weights=weights)
+
+
+def betweenness(g, vertex_set=None, weight=True, max_length=None):
+    logger = logging.getLogger('network_analysis.betweenness')
+    ig = to_igraph(g)
+    if (max_length is not None) and (max_length > g.order//2):
+        logger.warning('Long max_length, cutoff provided.')
+
+    if vertex_set is None:
+        logger.info('No vertex set defined defaulting to all vertex evaluation')
+        vertex_set = g.vertices
+    assert isinstance(vertex_set, list)
+    vertex_set = [v for v in vertex_set if g.is_vertex(v)]
+    weighted = ig.is_weighted() and weight
+    weights = 'weight' if weighted else None
+    vlist = ig.vs['name'] if ig.is_named() else list(range(ig.vcount()))
+    centrality = ig.betweenness(vertices=vertex_set,
+                                directed=g.is_directed,
+                                cutoff=max_length,
+                                weights=weights)
+    return {vlist[i]: c for i, c in enumerate(centrality)}
+
+
+def edge_betweenness(g, weight=True, max_length=None):
+    logger = logging.getLogger('network_analysis.edge_betweenness')
+    ig = to_igraph(g)
+    weighted = ig.is_weighted() and weight
+    vlist = ig.vs['name'] if ig.is_named() else list(range(ig.vcount()))
+    weights = 'weight' if weighted else None
+    edge_list = [(vlist[u], vlist[v]) for u, v in ig.get_edgelist()]
+    ebet = ig.edge_betweenness(directed=ig.is_directed(), cutoff=max_length, weights=weights)
+    assert len(edge_list) == len(ebet)
+    return [(edge_list[i][0], edge_list[i][1], c) for i, c in enumerate(ebet)]
 
 
 def shortest_path(g, src=None, tgt=None, weight=True):
@@ -132,7 +173,6 @@ def gomory_hu_cuts(g, weight=True):
 
     if weighted:
         logger.debug('Given graph is weighed!!')
-
     if ig.is_directed():
         logger.debug('Given graph is directed in nature!!')
 
@@ -168,7 +208,6 @@ def maxflow(g, src=None, tgt=None, weight=True):
         src = [src]
     assert isinstance(src, list)
     src = [v for v in src if g.is_vertex(v)]
-
     if tgt is None:
         logger.info('No target list specified defaulting to all vertices!')
         tgt = g.vertices
@@ -185,9 +224,7 @@ def maxflow(g, src=None, tgt=None, weight=True):
     vlist = ig.vs['name']
     elist = [(vlist[u], vlist[v]) for u, v in ig.get_edgelist()]
     vmap = {v: i for i, v in enumerate(vlist)}
-
     capacity = 'weight' if weighted else None
-
     for v in src:
         capacities[v] = dict()
         for u in tgt:
@@ -196,7 +233,7 @@ def maxflow(g, src=None, tgt=None, weight=True):
                 g_cut = ig.maxflow(source=vmap[v], target=vmap[u], capacity=capacity)
                 capacities[v][u]['flow'] = g_cut.value
                 capacities[v][u]['cut'] = [elist[c] for c in g_cut.cut]
-                capacities[v][u]['cover'] = [[vlist[n] for n in cover ] for cover in list(g_cut.as_cover())]
+                capacities[v][u]['cover'] = [[vlist[n] for n in cover] for cover in list(g_cut.as_cover())]
     return capacities
 
 

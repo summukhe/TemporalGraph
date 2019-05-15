@@ -10,7 +10,6 @@ from .amino_acids import get_amino
 from temporal_graph.force_field import FFManager
 
 
-__author__  = "Sumanta Mukherjee"
 __version__ = "1.0"
 
 __all__ = ['CaTrace', 'do_mutation', 'PDBStructure', 'pdb_to_catrace']
@@ -55,14 +54,21 @@ class CaTrace:
     def size(self):
         return len(self.__structure)
 
+    @property
     def sequence(self):
         s = list()
         for k in sorted([int(r) for r in self.__residues.keys()]):
             s.append(self.__residues[k])
         return s
 
+    @property
     def residue_ids(self):
         return sorted([int(k) for k in self.__structure.keys()])
+
+    def key(self, residue_id):
+        if residue_id in self.__residues:
+            return '%s%d' % (self.__residues[residue_id], residue_id)
+        return ''
 
     def xyz(self, resid):
         residue_id = int(resid)
@@ -96,7 +102,7 @@ class CaTrace:
     def write(self, fh):
         if not hasattr(fh, 'write'):
             raise Exception('Invalid object type [expects file object]')
-        res_ids = self.residue_ids()
+        res_ids = self.residue_ids
         for i, r in enumerate(res_ids):
             line = "ATOM  %5d  %-3s %3s %1s%4d    %8.3f%8.3f%8.3f%6.2f%6.2f " % (i,
                                                                                  'CA',
@@ -115,14 +121,14 @@ class CaTrace:
 
     def __str__(self):
         s = ''
-        for aa in self.sequence():
+        for aa in self.sequence:
             s = s + aa.name(one_letter_code=True)
         return s
 
 
 def do_mutation(ca_trace, res_id, to_residue):
     assert isinstance(ca_trace, CaTrace)
-    residue_ids = ca_trace.residue_ids()
+    residue_ids = ca_trace.residue_ids
     assert res_id in residue_ids
     ca_trace.set_amino(res_id, to_residue)
     return ca_trace
@@ -172,12 +178,14 @@ class PDBStructure:
     def size(self):
         return len(self.__structure)
 
+    @property
     def sequence(self):
         s = list()
         for k in sorted([int(r) for r in self.__residues.keys()]):
             s.append(self.__residues[k])
         return s
 
+    @property
     def residue_ids(self):
         return sorted([int(k) for k in self.__structure.keys()])
 
@@ -202,7 +210,7 @@ class PDBStructure:
     def write(self, fh):
         if not hasattr(fh, 'write'):
             raise Exception('Invalid object type [expects file object]')
-        res_ids = self.residue_ids()
+        res_ids = self.residue_ids
         for i, r in enumerate(res_ids):
             for j, aa in enumerate(self.atom_list(r)):
                 line = "ATOM  %5d  %-3s %3s %1s%4d    %8.3f%8.3f%8.3f%6.2f%6.2f " % (self.__structure[r][aa]['id'],
@@ -222,7 +230,7 @@ class PDBStructure:
 
     def __str__(self):
         s = ''
-        for aa in self.sequence():
+        for aa in self.sequence:
             s = s + aa.name(one_letter_code=True)
         return s
 
@@ -245,7 +253,7 @@ class PDBStructure:
 
 def pdb_to_catrace(pdb_struct):
     assert isinstance(pdb_struct, PDBStructure)
-    residue_ids = pdb_struct.residue_ids()
+    residue_ids = pdb_struct.residue_ids
     entries = list()
     logger = logging.getLogger(name='pdb_processor.pdb_to_catrace')
     for r in residue_ids:

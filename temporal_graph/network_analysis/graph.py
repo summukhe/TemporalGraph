@@ -5,10 +5,7 @@ Basic utility for graph representation
 import numpy as np
 import pandas as pd
 
-__author__ = "Sumanta Mukherjee"
 __version__ = "1.0"
-
-
 __all__ = ['SimpleGraph', 'WeightedGraph']
 
 

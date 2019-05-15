@@ -3,7 +3,6 @@ This code base reports all supported amino acid residue types
 and also supports their associated property index.
 """
 
-__author__  = "Sumanta Mukherjee"
 __version__ = 1.0
 
 __all__ = ['AminoAcid', 'get_amino', 'valid_amino_acids']

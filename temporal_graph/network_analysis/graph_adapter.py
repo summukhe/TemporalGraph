@@ -2,7 +2,6 @@ import igraph
 import logging
 from .graph import *
 
-__author__ = "Sumanta Mukherjee"
 __all__ = ['to_igraph', 'from_igraph']
 
 

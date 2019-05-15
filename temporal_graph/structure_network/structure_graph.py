@@ -1,11 +1,11 @@
 import numpy as np
-from temporal_graph.network_analysis.graph import WeightedGraph
+from temporal_graph.network_analysis import WeightedGraph
 from temporal_graph.spatial_ds import *
 from temporal_graph.pdb_processor import *
 from temporal_graph.force_field import *
 
 
-__author__ = "Sumanta Mukherjee"
+__version__ = "1.0"
 __all__ = ['DistanceCutoff', 'contact_graph', 'contact_energy_graph']
 
 
@@ -25,7 +25,7 @@ class DistanceCutoff:
 def contact_graph(ca_trace, cutoff=DistanceCutoff(), potential='mj'):
     assert isinstance(ca_trace, CaTrace)
     assert isinstance(cutoff, DistanceCutoff)
-    res_ids = ca_trace.residue_ids()
+    res_ids = ca_trace.residue_ids
     c_graph = WeightedGraph(directed=False)
     for ri in res_ids:
         amino_i = ca_trace.get_amino(ri)
@@ -53,7 +53,7 @@ def contact_energy_graph(pdb_struct,
     assert isinstance(pdb_struct, PDBStructure)
     assert isinstance(energy_score, FFNormalizer)
     ca_trace = pdb_to_catrace(pdb_struct)
-    residues = ca_trace.residue_ids()
+    residues = ca_trace.residue_ids
     x_lst, y_lst, z_lst = [], [], []
     for r in residues:
         x, y, z = ca_trace.xyz(r)

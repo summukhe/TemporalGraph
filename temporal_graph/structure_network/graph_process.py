@@ -4,8 +4,7 @@ from temporal_graph.network_process import *
 from temporal_graph.structure_network import *
 from temporal_graph.pdb_processor import *
 
-
-__author__ = "Sumanta Mukherjee"
+__version__ = "1.0"
 __all__ = ["mark_diffusion_on_structure"]
 
 
@@ -32,7 +31,7 @@ def mark_diffusion_on_structure(ca_trace,
                             start_nodes=signal_nodes,
                             blocked=blocked_nodes)
     diffusion_process.n_steps(diffusion_step)
-    res_ids = ca_trace.residue_ids()
+    res_ids = ca_trace.residue_ids
     nodes = ["%s%d" % (ca_trace.get_amino(r),r) for r in res_ids]
     n_size = diffusion_step // report_step
     process_trj = [deepcopy(ca_trace) for i in range(n_size)]

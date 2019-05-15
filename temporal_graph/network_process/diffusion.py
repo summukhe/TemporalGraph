@@ -4,7 +4,6 @@ from .signal import *
 from copy import deepcopy
 from temporal_graph.network_analysis import WeightedGraph
 
-__author__ = "Sumanta Mukherjee"
 __all__ = ["DiffusionOnStaticGraph", "analyze_vertex_contribution"]
 
 

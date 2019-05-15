@@ -6,7 +6,6 @@ trace from trajectory pdb files.
 import os
 from temporal_graph.pdb_processor import CaTrace, PDBStructure, pdb_to_catrace
 
-__author__  = "Sumanta Mukherjee"
 __version__ = "1.0"
 
 __all__ = ['read_trajectory_catrace', 'read_pdb']
