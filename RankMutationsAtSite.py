@@ -86,8 +86,8 @@ if __name__ == "__main__":
         exit(1)
 
     structure = instance[args.chain]
-    site1 = read_site_residue(args.site1, structure)
-    site2 = read_site_residue(args.site2, structure)
+    site1 = read_site_residue(args.site1, structure, key=False)
+    site2 = read_site_residue(args.site2, structure, key=False)
     residue_id = args.residue
     assert residue_id in structure.residue_ids
 

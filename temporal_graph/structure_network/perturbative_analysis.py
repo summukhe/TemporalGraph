@@ -132,10 +132,9 @@ def mutation_evaluation_by_centrality(pdb_structure,
     n = structure.size
     assert n > 1
     residue_ids = structure.residue_ids
-    residue_key = [structure.key(r) for r in residue_ids]
     assert resid in residue_ids
     for s in site1 + site2:
-        assert s in residue_key
+        assert s in residue_ids
     all_aminos = valid_amino_acids(one_letter=True)
     score = MutationEffectScore(resid, structure.get_amino(resid).name(one_letter_code=True))
     for aa in all_aminos:
@@ -146,9 +145,11 @@ def mutation_evaluation_by_centrality(pdb_structure,
                            cutoff=DistanceCutoff(def_cutoff=contact_radius),
                            potential=potential)
         g_inv = weight_inversion(cg)
+        site1_keys = [structure.key(r) for r in site1]
+        site2_keys = [structure.key(r) for r in site2]
         node_stats = between_groups_centrality(g_inv,
-                                               group1=site1,
-                                               group2=site2,
+                                               group1=site1_keys,
+                                               group2=site2_keys,
                                                weight=True,
                                                scale=100)
         score[aa] = node_stats
@@ -173,10 +174,9 @@ def mutation_evaluation_by_mincut(pdb_structure,
     n = structure.size
     assert n > 1
     residue_ids = structure.residue_ids
-    residue_key = [structure.key(r) for r in residue_ids]
     assert resid in residue_ids
     for s in site1 + site2:
-        assert s in residue_key
+        assert s in residue_ids
     all_aminos = valid_amino_acids(one_letter=True)
     all_sites = set(site1 + site2)
     result = MutationEffectScore(resid, structure.get_amino(resid).name(one_letter_code=True))
@@ -188,7 +188,9 @@ def mutation_evaluation_by_mincut(pdb_structure,
                            cutoff=DistanceCutoff(def_cutoff=contact_radius),
                            potential=potential)
         g_inv = weight_inversion(cg)
-        flow = maxflow(g_inv, src=site1, tgt=site2, weight=True)
+        site1_key = [structure.key(r) for r in site1]
+        site2_key = [structure.key(r) for r in site2]
+        flow = maxflow(g_inv, src=site1_key, tgt=site2_key, weight=True)
         assert isinstance(flow, dict)
         marked_residues = dict()
         for u in flow.keys():

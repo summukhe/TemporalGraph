@@ -20,12 +20,15 @@ def is_integer(parser, x):
     parser.error('Not an integer value (%s)' % x)
 
 
-def read_site_residue(site_file, structure):
+def read_site_residue(site_file, structure, key=True):
     assert os.path.isfile(site_file)
     assert isinstance(structure, temporal_graph.PDBStructure) or is_valid_file(structure, temporal_graph.CaTrace)
     with open(site_file, "r") as f:
         site_residues = [int(r) for r in f.readlines()]
     residue_ids = structure.residue_ids
-    site_reskey = [structure.key(r) for r in site_residues if r in residue_ids]
+    if key:
+        site_reskey = [structure.key(r) for r in site_residues if r in residue_ids]
+    else:
+        site_reskey = [r for r in site_residues if r in residue_ids]
     return site_reskey
 
