@@ -1,4 +1,5 @@
 import numpy as np
+from .distance_dependent import DistanceDependentPotential
 from temporal_graph.pdb_processor.amino_acids import AminoAcid, get_amino, valid_amino_acids
 
 __author__ = "Sumanta Mukherjee"
@@ -176,10 +177,10 @@ __optimized_potential__ = np.array([
 
 
 def supported_potentials():
-    return ['mj', 'thop', 'micc']
+    return ['mj', 'charmm']
 
 
-def get_pair_potential( amino1, amino2, pot_type='mj'):
+def get_pair_potential(amino1, amino2, distance, pot_type='mj'):
     assert pot_type in supported_potentials()
 
     if isinstance(amino1, str):
@@ -195,9 +196,8 @@ def get_pair_potential( amino1, amino2, pot_type='mj'):
     if pot_type == 'mj':
         return __mj_potential__[aminos.index(amino1.name(one_letter_code=True)),
                                 aminos.index(amino2.name(one_letter_code=True))]
-    elif pot_type == 'thop':
-        return __contact_potential__[aminos.index(amino1.name(one_letter_code=True)),
-                                     aminos.index(amino2.name(one_letter_code=True))]
-    elif pot_type == 'micc':
-        return __optimized_potential__[aminos.index(amino1.name(one_letter_code=True)),
-                                       aminos.index(amino2.name(one_letter_code=True))]
+    elif pot_type == 'charmm':
+        instance = DistanceDependentPotential.get_instance()
+        return instance(amino1.name(one_letter_code=True),
+                        amino2.name(one_letter_code=True),
+                        distance)

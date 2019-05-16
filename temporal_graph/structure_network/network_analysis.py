@@ -21,10 +21,10 @@ def between_site_residues_by_stpath(pdb_structure,
     if type == 'energy':
         g = contact_energy_graph(pdb_structure,
                                  contact_radius=contact_radius)
-    elif type == 'mj':
+    elif type in ['mj', 'charmm']:
         g = contact_graph(pdb_to_catrace(pdb_structure),
                           cutoff=DistanceCutoff(def_cutoff=contact_radius),
-                          potential='mj')
+                          potential=type)
     g_inv = weight_inversion(g)
     node_stats = between_groups_centrality(g_inv,
                                            group1=site1,
@@ -37,7 +37,7 @@ def between_site_residues_by_stpath(pdb_structure,
 def between_site_residues_by_mincut(pdb_structure,
                                     site1,
                                     site2,
-                                    type='energy',
+                                    type='charmm',
                                     contact_radius=12):
     assert isinstance(pdb_structure, PDBStructure)
     assert isinstance(site1, list) and isinstance(site2, list)
@@ -47,10 +47,10 @@ def between_site_residues_by_mincut(pdb_structure,
     if type == 'energy':
         g = contact_energy_graph(pdb_structure,
                                  contact_radius=contact_radius)
-    elif type == 'mj':
+    elif type in ['mj', 'charmm']:
         g = contact_graph(pdb_to_catrace(pdb_structure),
                           cutoff=DistanceCutoff(def_cutoff=contact_radius),
-                          potential='mj')
+                          potential=type)
     g_inv = weight_inversion(g)
     cuts = maxflow(g_inv, src=site1, tgt=site2, weight=True)
     assert isinstance(cuts, dict)

@@ -109,10 +109,14 @@ def get_all_shortest_paths(g, src=None, tgt=None, weight=True, min_path_length=2
         tgt = [tgt]
 
     for v in src:
-        assert g.is_vertex(v)
+        if not g.is_vertex(v):
+            logger.error('%s not a valid resiude' % v)
+            raise Exception("%s not a valid residue" % v)
 
     for v in tgt:
-        assert g.is_vertex(v)
+        if not g.is_vertex(v):
+            logger.error("%s not a valid residue" % v)
+            raise Exception("%s not a valid residue" % v)
 
     weighted = ('weight' in ig.es.attribute_names()) and weight
 

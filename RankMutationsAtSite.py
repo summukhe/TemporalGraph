@@ -2,14 +2,15 @@ import os
 import sys
 import logging
 import argparse
-
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from CLIUtility import *
-import temporal_graph
+from temporal_graph import *
+
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Mark important residues between sites in a pdb structure")
+    parser = argparse.ArgumentParser(description="Rank mutants by it effect in network " +
+                                                 "communication between sites in a pdb structure")
     parser.add_argument('--pdb', dest='pdb',
                         help="pdb file missing residues must be resolved.",
                         required=True,
@@ -30,13 +31,18 @@ if __name__ == "__main__":
                         required=True,
                         metavar='FILE', type=lambda x: is_valid_file(parser, x))
 
+    parser.add_argument('--residue', dest='residue',
+                        help='residue id on which the mutation selection will be performed!',
+                        required=True,
+                        metavar='INTEGER', type=int)
+
     parser.add_argument('--method', dest='method',
                         help="string suggesting type of analysis to be performed ('centrality', 'mincut')",
                         required=False,
                         metavar="STRING", type=str)
 
     parser.add_argument('--potential', dest='potential',
-                        help="string suggesting potential to be used for the analysis ('mj', 'energy', 'charmm')",
+                        help="string suggesting potential to be used for the analysis ('mj', 'energy')",
                         required=False,
                         metavar="STRING", type=str)
 
@@ -54,6 +60,7 @@ if __name__ == "__main__":
     parser.set_defaults(method='centrality')
     parser.set_defaults(potential='mj')
     parser.set_defaults(cutoff=12)
+
     args = parser.parse_args()
 
     if args.debug:
@@ -62,7 +69,7 @@ if __name__ == "__main__":
         logging.basicConfig(level=logging.WARNING)
 
     logger = logging.getLogger(name="MAIN")
-    pdbs = temporal_graph.read_pdb(args.pdb)
+    pdbs = read_pdb(args.pdb)
     if len(pdbs) == 0:
         logger.error('No pdb found!!')
         exit(1)
@@ -81,28 +88,34 @@ if __name__ == "__main__":
     structure = instance[args.chain]
     site1 = read_site_residue(args.site1, structure)
     site2 = read_site_residue(args.site2, structure)
+    residue_id = args.residue
+    assert residue_id in structure.residue_ids
 
     if args.method not in ['mincut', 'centrality']:
         logger.error('Invalid method (%s)' % args.method)
         exit(1)
 
-    if args.potential not in ['mj', 'energy', 'charmm']:
+    if args.potential not in ['mj', 'charmm']:
         logger.error('Invalid potential (%s)' % args.potential)
         exit(1)
 
-    if args.method == 'mincut':
-        __, residues = temporal_graph.between_site_residues_by_mincut(pdb_structure=structure,
-                                                                      site1=site1,
-                                                                      site2=site2,
-                                                                      type=args.potential,
-                                                                      contact_radius=args.cutoff)
-    elif args.method == "centrality":
-        residues = temporal_graph.between_site_residues_by_stpath(pdb_structure=structure,
-                                                                  site1=site1,
-                                                                  site2=site2,
-                                                                  type=args.potential,
-                                                                  contact_radius=args.cutoff)
+    if residue_id in site1 + site2:
+        logger.error('Residue selected should not be part of the site')
+        exit(1)
 
-    ordered_residues = list(reversed(sorted([(k, v) for k, v in residues.items()], key=lambda x: x[1])))
-    for k, v in ordered_residues:
-        print('%s %.3f' % (k, v))
+    logger.debug("Starting mutation analysis!!")
+    curr_residue, result = mutation_evaluation(pdb_structure=structure,
+                                               residue_id=residue_id,
+                                               site1=site1,
+                                               site2=site2,
+                                               method=args.method,
+                                               contact_radius=args.cutoff,
+                                               potential=args.potential)
+
+    fscore = result.normalized_score
+    for aa, value in fscore.items():
+        print("%s->%s %.3f" % (result.ref_amino, aa, value))
+
+
+
+

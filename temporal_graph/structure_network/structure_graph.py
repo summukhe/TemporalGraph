@@ -25,6 +25,7 @@ class DistanceCutoff:
 def contact_graph(ca_trace, cutoff=DistanceCutoff(), potential='mj'):
     assert isinstance(ca_trace, CaTrace)
     assert isinstance(cutoff, DistanceCutoff)
+    assert potential in ['mj', 'charmm']
     res_ids = ca_trace.residue_ids
     c_graph = WeightedGraph(directed=False)
     for ri in res_ids:
@@ -37,7 +38,7 @@ def contact_graph(ca_trace, cutoff=DistanceCutoff(), potential='mj'):
                 c = cutoff(amino_i, amino_j)
                 d = np.sqrt((x_i-x_j)**2 + (y_i-y_j)**2 + (z_i-z_j)**2)
                 if d <= c:
-                    p = get_pair_potential(amino_i, amino_j, pot_type=potential)
+                    p = get_pair_potential(amino_i, amino_j, d, pot_type=potential)
                     c_graph.add_edge('%s%d' % (amino_i, ri),
                                      '%s%d' % (amino_j, rj),
                                      weight=p)

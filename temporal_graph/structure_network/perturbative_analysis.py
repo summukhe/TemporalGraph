@@ -1,10 +1,85 @@
 import logging
+import numpy as np
 from copy import deepcopy
 from .structure_graph import *
 from temporal_graph.pdb_processor import *
 from temporal_graph.network_analysis import *
 
-__all__ = ['mutation_evaluation']
+__all__ = ['mutation_evaluation', 'MutationEffectScore']
+
+
+class MutationEffectScore:
+    def __init__(self, residue_id, base_amino):
+        assert isinstance(residue_id, np.int)
+        self.__residue_id = residue_id
+        self.__ref_amino = base_amino
+        self.__scores = dict()
+
+    @property
+    def normalized_score(self):
+        ref_aa = self.ref_amino
+        all_aa = self.keys
+        assert ref_aa in self.__scores
+
+        def solve_rank_order(x):
+            assert isinstance(x, dict)
+            order = list(reversed(sorted([(k, v) for k, v in x.items()], key=lambda p: p[1])))
+            rank, rank_lookup, last_val = 1, {}, None
+            for i, pair in enumerate(order):
+                assert (last_val is None) or (last_val >= pair[1])
+                rank_lookup[pair[0]] = rank
+                if last_val == pair[1]:
+                    rank += 1
+                last_val = pair[1]
+            return rank, rank_lookup
+
+        scores_ref = self.__scores[ref_aa]
+        max_rank, rank_ref = solve_rank_order(scores_ref)
+        effect = dict()
+
+        for aa in all_aa:
+            scores_tgt = self.__scores[aa]
+            mr, rank_tgt = solve_rank_order(scores_tgt)
+            f = mr / max_rank
+            common_set = set(list(rank_ref.keys())).intersection(set(list(rank_tgt.keys())))
+            s = 0
+            for i in common_set:
+                p = (scores_tgt[i] - scores_ref[i])**2
+                s += p * (rank_tgt[i] - rank_ref[i]*f)
+            effect[aa] = s
+        return effect
+
+    @property
+    def is_complete(self):
+        return len(self.__scores) == len(valid_amino_acids(one_letter=True))
+
+    @property
+    def base_residue(self):
+        return self.__residue_id
+
+    @property
+    def ref_amino(self):
+        return self.__ref_amino
+
+    @property
+    def keys(self):
+        return list(self.__scores.keys())
+
+    @property
+    def to_dict(self):
+        return self.__scores
+
+    def __getitem__(self, item):
+        assert item in self.__scores
+        return self.__scores
+
+    def __setitem__(self, key, value):
+        assert key in valid_amino_acids(one_letter=True)
+        assert isinstance(value, dict)
+        self.__scores[key] = value
+
+    def __contains__(self, key):
+        return key in self.__scores.keys()
 
 
 def mutation_evaluation(pdb_structure,
@@ -16,23 +91,27 @@ def mutation_evaluation(pdb_structure,
                         potential='mj'):
     assert method in ['mincut', 'centrality']
     assert isinstance(pdb_structure, PDBStructure) or isinstance(pdb_structure, CaTrace)
-    current_residue = pdb_structure.get_amino(residue_id).name(one_letter_code=True)
+    if isinstance(pdb_structure, PDBStructure):
+        structure = pdb_to_catrace(pdb_structure)
+    else:
+        structure = deepcopy(pdb_structure)
+    current_residue = structure.get_amino(residue_id).name(one_letter_code=True)
     if method == 'mincut':
-        result = mutation_evaluation_by_mincut(pdb_structure,
+        result = mutation_evaluation_by_mincut(structure,
                                                residue_id,
                                                site1,
                                                site2,
                                                contact_radius=contact_radius,
                                                potential=potential)
     else:
-        result = mutation_evaluation_by_centrality(pdb_structure,
+        result = mutation_evaluation_by_centrality(structure,
                                                    residue_id,
                                                    site1,
                                                    site2,
                                                    contact_radius=contact_radius,
                                                    potential=potential)
     assert current_residue in result
-    return result
+    return current_residue, result
 
 
 def mutation_evaluation_by_centrality(pdb_structure,
@@ -42,7 +121,7 @@ def mutation_evaluation_by_centrality(pdb_structure,
                                       contact_radius=12,
                                       potential='mj'):
     logger = logging.getLogger(name="structure_network.mutation_evaluation_by_centrality")
-    assert potential in ['mj']
+    assert potential in ['mj', 'charmm']
     if isinstance(pdb_structure, PDBStructure):
         logger.debug('Extracting CA trace from the PDB structure')
         structure = pdb_to_catrace(pdb_structure)
@@ -58,8 +137,7 @@ def mutation_evaluation_by_centrality(pdb_structure,
     for s in site1 + site2:
         assert s in residue_key
     all_aminos = valid_amino_acids(one_letter=True)
-
-    result = {}
+    score = MutationEffectScore(resid, structure.get_amino(resid).name(one_letter_code=True))
     for aa in all_aminos:
         logger.debug('Mutating residue %d to amino acid %s' % (resid, aa))
         structure.set_amino(resid, aa_type=aa)
@@ -73,8 +151,8 @@ def mutation_evaluation_by_centrality(pdb_structure,
                                                group2=site2,
                                                weight=True,
                                                scale=100)
-        result[aa] = node_stats
-    return result
+        score[aa] = node_stats
+    return score
 
 
 def mutation_evaluation_by_mincut(pdb_structure,
@@ -84,7 +162,7 @@ def mutation_evaluation_by_mincut(pdb_structure,
                                   contact_radius=12,
                                   potential="mj"):
     logger = logging.getLogger(name="structure_network.mutation_evaluation_by_mincut")
-    assert potential in ['mj']
+    assert potential in ['mj', 'charmm']
     if isinstance(pdb_structure, PDBStructure):
         logger.info('Extracting CA trace from the PDB structure')
         structure = pdb_to_catrace(pdb_structure)
@@ -101,8 +179,7 @@ def mutation_evaluation_by_mincut(pdb_structure,
         assert s in residue_key
     all_aminos = valid_amino_acids(one_letter=True)
     all_sites = set(site1 + site2)
-
-    result = dict()
+    result = MutationEffectScore(resid, structure.get_amino(resid).name(one_letter_code=True))
     for aa in all_aminos:
         logger.debug('Mutating residue %d to amino acid %s' % (resid, aa))
         structure.set_amino(resid, aa_type=aa)
@@ -128,4 +205,7 @@ def mutation_evaluation_by_mincut(pdb_structure,
                         marked_residues[y] += 1
         result[aa] = deepcopy(marked_residues)
     return result
+
+
+
 
