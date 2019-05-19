@@ -3,6 +3,7 @@ from copy import deepcopy
 from temporal_graph.network_process import *
 from temporal_graph.structure_network import *
 from temporal_graph.pdb_processor import *
+from temporal_graph.spatial_ds import *
 
 __version__ = "1.0"
 __all__ = ["mark_diffusion_on_structure"]

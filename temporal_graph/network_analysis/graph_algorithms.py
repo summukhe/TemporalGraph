@@ -8,7 +8,7 @@ from .graph_adapter import *
 __all__ = ['diameter', 'betweenness', 'edge_betweenness',
            'shortest_path', 'get_all_shortest_paths',
            'between_groups_centrality', 'gomory_hu_cuts',
-           'maxflow', 'weight_inversion']
+           'maxflow', 'weight_inversion', 'is_connected']
 
 
 def diameter(g, weight=True):
@@ -262,3 +262,8 @@ def weight_inversion(g, buffer=1.):
         gcopy.add_edge(src=edge[0], dst=edge[1], weight=inv_wlist[i])
 
     return gcopy
+
+
+def is_connected(g):
+    ig = to_igraph(g)
+    return ig.is_connected()

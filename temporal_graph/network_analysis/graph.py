@@ -4,9 +4,11 @@ Basic utility for graph representation
 
 import numpy as np
 import pandas as pd
+from copy import deepcopy
+from temporal_graph.spatial_ds import *
 
 __version__ = "1.0"
-__all__ = ['SimpleGraph', 'WeightedGraph']
+__all__ = ['SimpleGraph', 'WeightedGraph', 'GeometricGraph3d']
 
 
 class SimpleGraph(object):
@@ -197,8 +199,10 @@ class WeightedGraph:
             self.__vattrib_lookup[v] = attribute
 
     def add_edge(self, src, dst, weight=None):
-        self.add_vertex(src)
-        self.add_vertex(dst)
+        if not self.is_vertex(src):
+            self.add_vertex(src)
+        if not self.is_vertex(dst):
+            self.add_vertex(dst)
         self.__G.add_edge(src, dst)
         e_id = self.__G.edge_id(src, dst)
         if (e_id not in self.__eweight_lookup) or (weight is not None):
@@ -293,5 +297,23 @@ class WeightedGraph:
     @property
     def adjacency(self):
         return self.__G.adjacency
+
+
+class GeometricGraph3d(WeightedGraph):
+    def __init__(self, directed=False, def_weight=1.0):
+        WeightedGraph.__init__(self, directed=False, def_weight=def_weight)
+
+    def add_vertex(self, v, attribute):
+        assert isinstance(attribute, Coordinate3d)
+        super().add_vertex(v, attribute=attribute)
+
+    def add_edge(self, src, dst, weight=None):
+        assert self.is_vertex(src)
+        assert self.is_vertex(dst)
+        super().add_edge(src=src, dst=dst, weight=weight)
+
+
+
+
 
 

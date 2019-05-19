@@ -2,6 +2,7 @@ import logging
 import numpy as np
 from copy import deepcopy
 from .structure_graph import *
+from temporal_graph.spatial_ds import *
 from temporal_graph.pdb_processor import *
 from temporal_graph.network_analysis import *
 
