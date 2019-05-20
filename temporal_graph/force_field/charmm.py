@@ -54,7 +54,6 @@ def parse_amino_charmff(filename):
                 acceptors[residue_name] = list()
             for i in range(1, len(fields)):
                 acceptors[residue_name].append(fields[i])
-
     return atoms, bonds, donors, acceptors
 
 

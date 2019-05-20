@@ -1,5 +1,6 @@
 import os
 import sys
+import json
 import logging
 import argparse
 
@@ -76,8 +77,13 @@ if __name__ == "__main__":
 
     print('%d x %d' % (g.order, g.size))
     path_filter = temporal_graph.GeometricPathFilter(forward=True,
-                                                     distance_cutoff=6)
+                                                     weight_cutoff=0.5,
+                                                     distance_cutoff=8)
     g_it = temporal_graph.AllPathIterator(g, path_filter)
     for s in site1:
-        paths = g_it.all_path(s, stop_vertex=site2, min_path_length=4)
-        print(paths)
+        paths = g_it.all_path(s,
+                              stop_vertex=site2,
+                              min_path_length=3,
+                              max_path_length=10)
+        if len(paths) > 0:
+            print(json.dumps(paths, indent=2))

@@ -81,7 +81,7 @@ class GeometricPathFilter(PathFilter):
                 return False
         if self.is_forward_only and n_2 is not None:
             v1 = connecting_vector(g.attribute(n_1), g.attribute(n)).unit_vector
-            v2 = connecting_vector(g.attribute(n_2), g.attribute(n)).unit_vector
+            v2 = connecting_vector(g.attribute(n_2), g.attribute(n_1)).unit_vector
             if dotp(v1, v2) > 0:
                 return False
         return True
@@ -103,7 +103,11 @@ class AllPathIterator:
     def is_vertex(self, v):
         return self.__g.is_vertex(v)
 
-    def all_path(self, start_vertex, stop_vertex, min_path_length=2):
+    def all_path(self,
+                 start_vertex,
+                 stop_vertex,
+                 min_path_length=2,
+                 max_path_length=None):
         assert self.__g.is_vertex(start_vertex)
         if isinstance(stop_vertex, list):
             self.__stop_vertex = set(stop_vertex)
@@ -112,14 +116,21 @@ class AllPathIterator:
         assert start_vertex not in self.__stop_vertex
         for s in self.__stop_vertex:
             assert self.__g.is_vertex(s)
-        self.__all_paths(start_vertex, min_path_length=min_path_length)
+        if max_path_length is None:
+            max_path_length = self.__g.order // 2
+        self.__all_paths(start_vertex,
+                         min_path_length=min_path_length,
+                         max_path_length=max_path_length)
         paths = deepcopy(self.__paths)
         self.__paths = []
         return paths
 
-    def __all_paths(self, start_vertex, min_path_length=2):
+    def __all_paths(self,
+                    start_vertex,
+                    min_path_length=2,
+                    max_path_length=10):
         assert self.__g.is_vertex(start_vertex)
-        if start_vertex not in self.__stop_vertex and not self.__nodes[start_vertex]:
+        if not self.__nodes[start_vertex]:
             append = False
             if len(self.__stack) > 0:
                 v = start_vertex
@@ -132,14 +143,17 @@ class AllPathIterator:
             if append:
                 self.__stack.append(start_vertex)
                 self.__nodes[start_vertex] = True
-                for v in self.__g.out_neighbors(start_vertex):
-                    self.__all_paths(v, min_path_length=min_path_length)
+                if start_vertex in self.__stop_vertex:
+                    if len(self.__stack) >= min_path_length:
+                        path_dict = {'path': deepcopy(self.__stack),
+                                     'weights': []}
+                        for i in range(1, len(self.__stack)):
+                            path_dict['weights'].append(self.__g.weight(self.__stack[i-1], self.__stack[i]))
+                        self.__paths.append(path_dict)
+                elif len(self.__stack) < max_path_length:
+                    for v in self.__g.out_neighbors(start_vertex):
+                        self.__all_paths(v, min_path_length=min_path_length)
                 self.__stack.pop(-1)
                 self.__nodes[start_vertex] = False
-        elif start_vertex in self.__stop_vertex:
-            self.__stack.append(start_vertex)
-            if len(self.__stack) >= min_path_length:
-                self.__paths.append(deepcopy(self.__stack))
-            self.__stack.pop(-1)
 
 

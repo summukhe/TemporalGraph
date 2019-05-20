@@ -28,7 +28,8 @@ class DistanceDependentPotential:
                 self.__logger.debug(data.loc[i,:])
                 amino1 = get_amino(data.loc[i, 'amino1']).name(one_letter_code=True)
                 amino2 = get_amino(data.loc[i, 'amino2']).name(one_letter_code=True)
-                parameters = np.array(data.loc[i, ['f4', 'f3', 'f2', 'f1', 'f0']])[0]
+                parameters = np.array(data.loc[i, ['f4', 'f3', 'f2', 'f1', 'f0']])
+                self.__logger.debug('Reading index %d (%s, %s) : [%s]' % (i, amino1, amino2, parameters))
                 if amino1 not in self.__potential:
                     self.__potential[amino1] = dict()
                 self.__potential[amino1][amino2] = np.poly1d(parameters)
