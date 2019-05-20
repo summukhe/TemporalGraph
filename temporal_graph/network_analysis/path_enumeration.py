@@ -66,18 +66,14 @@ class GeometricPathFilter(PathFilter):
             self.__logger.debug("Not a geometric graph!")
             return False
         if not g.is_vertex(n) or not g.is_vertex(n_1) or not g.has_edge(n_1, n):
-            self.__logger.debug("improper edge defined (%s : %s)" % (n_1, n))
             return False
         if (n_2 is not None) and (not g.is_vertex(n_2) or not g.has_edge(n_2, n_1)):
-            self.__logger.debug("improper edge defined (%s : %s)" % (n_2, n_1))
             return False
         if self.has_weight_cutoff and g.weight(n_1, n) < self.weight_cutoff:
-            self.__logger.debug("failed at weight cutoff (%f < %f)" % (g.weight(n_1, n), self.weight_cutoff))
             return False
         if self.has_distance_cutoff:
             d = distance(g.attribute(n), g.attribute(n_1))
             if d > self._distance_cutoff():
-                self.__logger.debug("failed at distance cutoff (%f)" % d)
                 return False
         if self.is_forward_only and n_2 is not None:
             v1 = connecting_vector(g.attribute(n_1), g.attribute(n)).unit_vector

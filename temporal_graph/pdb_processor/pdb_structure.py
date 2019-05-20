@@ -154,7 +154,7 @@ class PDBStructure:
             if residue_id not in self.__structure:
                 self.__structure[residue_id] = dict()
             if not ff.is_valid_atom(residue_name, atom_name):
-                logger.error('Error validating residue, atom pair (%s, %s) ignoring!!' % (residue_name, atom_name))
+                logger.warning('Invalid atom pair (%s, %s) ignoring!!' % (residue_name, atom_name))
                 continue
             self.__structure[residue_id][atom_name] = {'x': item['x'],
                                                        'y': item['y'],

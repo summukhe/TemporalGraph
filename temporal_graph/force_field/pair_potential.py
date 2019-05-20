@@ -197,7 +197,7 @@ def get_pair_potential(amino1, amino2, distance, pot_type='mj'):
         return __mj_potential__[aminos.index(amino1.name(one_letter_code=True)),
                                 aminos.index(amino2.name(one_letter_code=True))]
     elif pot_type == 'charmm':
-        instance = DistanceDependentPotential.get_instance()
+        instance = DistanceDependentPotential()
         return instance(amino1.name(one_letter_code=True),
                         amino2.name(one_letter_code=True),
                         distance)

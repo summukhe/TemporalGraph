@@ -2,11 +2,12 @@ import logging
 import numpy as np
 from copy import deepcopy
 from .structure_graph import *
+from .all_path_analysis import *
 from temporal_graph.spatial_ds import *
 from temporal_graph.pdb_processor import *
 from temporal_graph.network_analysis import *
 
-__all__ = ['mutation_evaluation', 'MutationEffectScore']
+__all__ = ['mutation_evaluation', 'MutationEffectScore', 'all_path_mutation_evaluation']
 
 
 class MutationEffectScore:
@@ -15,9 +16,11 @@ class MutationEffectScore:
         self.__residue_id = residue_id
         self.__ref_amino = base_amino
         self.__scores = dict()
+        self.__logger = logging.getLogger(name="temporal_graph.MutationEffectScore")
 
     @property
     def normalized_score(self):
+        self.__logger.debug('normalized_score called!!')
         ref_aa = self.ref_amino
         all_aa = self.keys
         assert ref_aa in self.__scores
@@ -172,8 +175,7 @@ def mutation_evaluation_by_mincut(pdb_structure,
         structure = deepcopy(pdb_structure)
     assert isinstance(structure, CaTrace)
     assert isinstance(site1, list) and isinstance(site2, list)
-    n = structure.size
-    assert n > 1
+    assert structure.size > 1
     residue_ids = structure.residue_ids
     assert resid in residue_ids
     for s in site1 + site2:
@@ -188,10 +190,9 @@ def mutation_evaluation_by_mincut(pdb_structure,
         cg = contact_graph(structure,
                            cutoff=DistanceCutoff(def_cutoff=contact_radius),
                            potential=potential)
-        g_inv = weight_inversion(cg)
         site1_key = [structure.key(r) for r in site1]
         site2_key = [structure.key(r) for r in site2]
-        flow = maxflow(g_inv, src=site1_key, tgt=site2_key, weight=True)
+        flow = maxflow(cg, src=site1_key, tgt=site2_key, weight=True)
         assert isinstance(flow, dict)
         marked_residues = dict()
         for u in flow.keys():
@@ -208,6 +209,69 @@ def mutation_evaluation_by_mincut(pdb_structure,
                         marked_residues[y] += 1
         result[aa] = deepcopy(marked_residues)
     return result
+
+
+def all_path_mutation_evaluation(pdb_structure,
+                                 residue_id,
+                                 site1,
+                                 site2,
+                                 method='centrality',
+                                 flow_forward=True,
+                                 minimum_energy=0.5,
+                                 maximum_distance=12,
+                                 min_path_length=3,
+                                 max_path_length=10):
+    logger = logging.getLogger(name="temporal_network.all_path_mutation_evaluation")
+    if isinstance(pdb_structure, PDBStructure):
+        logger.info('Extracting CA trace from the PDB structure')
+        structure = pdb_to_catrace(pdb_structure)
+    else:
+        structure = deepcopy(pdb_structure)
+    assert isinstance(structure, CaTrace)
+    assert method in {'mincut', 'centrality'}
+    assert isinstance(site1, list) and isinstance(site2, list)
+    assert structure.size > 1
+    residue_ids = structure.residue_ids
+    assert residue_id in residue_ids
+    for s in site1 + site2:
+        assert s in residue_ids
+    all_aminos = valid_amino_acids(one_letter=True)
+    curr_residue = structure.get_amino(residue_id)
+    result = MutationEffectScore(residue_id,
+                                 structure.get_amino(residue_id).name(one_letter_code=True))
+    for aa in all_aminos:
+        logger.debug('Mutating residue %d to amino acid %s' % (residue_id, aa))
+        structure.set_amino(residue_id, aa_type=aa)
+        logger.debug('Current residue key: %s' % structure.key(residue_id))
+        cg = contact_graph(structure,
+                           cutoff=maximum_distance + 1.0,
+                           potential='charmm')
+        site1_key = [structure.key(r) for r in site1]
+        site2_key = [structure.key(r) for r in site2]
+        if method == "centrality":
+            logger.debug('Calculating all path trace based centrality measure!!')
+            __, scores = all_path_centrality(cg,
+                                             source=site1_key,
+                                             target=site2_key,
+                                             forward_path=flow_forward,
+                                             maximum_distance=maximum_distance,
+                                             minimum_weight=minimum_energy,
+                                             min_path_length=min_path_length,
+                                             max_path_length=max_path_length)
+        elif method == "mincut":
+            logger.debug('Calculating all path trace based mincut method!!')
+            __, scores = all_path_maxflow_score(cg,
+                                                source=site1_key,
+                                                target=site2_key,
+                                                forward_path=flow_forward,
+                                                maximum_distance=maximum_distance,
+                                                minimum_weight=minimum_energy,
+                                                min_path_length=min_path_length,
+                                                max_path_length=max_path_length)
+        result[aa] = scores
+    return curr_residue, result
+
+
 
 
 
