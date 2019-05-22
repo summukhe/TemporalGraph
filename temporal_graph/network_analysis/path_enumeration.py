@@ -116,6 +116,20 @@ class AllPathIterator:
                  min_path_length=2,
                  max_path_length=None):
         assert self.__g.is_vertex(start_vertex)
+        g_bk = None
+        if isinstance(self.__visitor, GeometricPathFilter) and self.__visitor.has_weight_cutoff:
+            g_bk = deepcopy(self.__g)
+            cutoff = self.__visitor.weight_cutoff
+            remove_edges = []
+            for u, v in self.__g.edges:
+                if self.__g.weight(u, v) < cutoff:
+                    remove_edges.append((u, v))
+            self.__logger.debug("Number of edges to be deleted (%d)" % len(remove_edges))
+            self.__logger.debug("Original graph dimension G(%d, %d)" % (self.__g.order, self.__g.size))
+            for u, v in remove_edges:
+                self.__g.del_edge(u, v)
+            self.__logger.debug("Post edge deletion graph size G(%d, %d)" % (self.__g.order, self.__g.size))
+
         if isinstance(stop_vertex, list):
             self.__stop_vertex = set(stop_vertex)
         else:
@@ -125,14 +139,26 @@ class AllPathIterator:
             assert self.__g.is_vertex(s)
         if max_path_length is None:
             max_path_length = self.__g.order // 2
-        self.__visited = set()
+
         self.__paths = []
-        self.__logger.debug("Evaluating all paths for residue: %s" % start_vertex)
-        self.__all_paths(start_vertex,
-                         max_paths=max_paths,
-                         min_path_length=min_path_length,
-                         max_path_length=max_path_length)
-        paths = deepcopy(self.__paths)
+        has_path = False
+        for v in self.__stop_vertex:
+            if self.__g.is_connected(start_vertex, v):
+                has_path = True
+                self.__logger.debug("Found path between (%s) <--> (%s)" % (start_vertex, v))
+                break
+        if has_path:
+            self.__visited = set()
+            self.__logger.debug("Evaluating all paths for residue: %s" % start_vertex)
+            self.__all_paths(start_vertex,
+                             max_paths=max_paths,
+                             min_path_length=min_path_length,
+                             max_path_length=max_path_length)
+            paths = deepcopy(self.__paths)
+
+        if g_bk is not None:
+            self.__g = deepcopy(g_bk)
+            self.__logger.debug("Restoring graph to size G(%d, %d)" % (self.__g.order, self.__g.size))
         self.__logger.debug("Number of paths found for vertex (%s) is %d" % (start_vertex, len(paths)))
         self.__paths = []
         return paths
@@ -167,7 +193,7 @@ class AllPathIterator:
                         if reject:
                             accept = True
                             for p in self.__paths:
-                                if path_distance(path, p['path']) > self.__path_separation:
+                                if path_distance(path, p['path']) < self.__path_separation:
                                     accept = False
                             reject = not accept
                         if not reject:
@@ -176,6 +202,7 @@ class AllPathIterator:
                             for i in range(1, len(self.__stack)):
                                 path_dict['weights'].append(self.__g.weight(self.__stack[i-1], self.__stack[i]))
                             self.__paths.append(path_dict)
+                            self.__logger.debug("Path found between (%s <-> %s) of length %d" % (path[0], path[-1], len(path)))
                 elif len(self.__stack) < max_path_length:
                     for v in self.__g.out_neighbors(start_vertex):
                         self.__all_paths(v,

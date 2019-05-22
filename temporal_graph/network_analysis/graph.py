@@ -275,7 +275,7 @@ class WeightedGraph:
 
     def in_neighbors(self, v, weight_sorted=True):
         nbrs = self.__G.in_neighbors(v)
-        if weigth_sorted:
+        if weight_sorted:
             weights = []
             for u in nbrs:
                 weights.append((u, self.weight(u, v)))
