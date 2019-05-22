@@ -64,5 +64,5 @@ if __name__ == "__main__":
         v_resid = int(v[3:])
         d = distance(Coordinate3d(*structure.xyz(u_resid, "CA")),
                      Coordinate3d(*structure.xyz(v_resid, "CA")))
-        print("%s %s %.4f %.3f" % (u, v, g.weight(u,v), d))
+        print("%s %s %.4f %.3f" % (u, v, g.weight(u, v), d))
 

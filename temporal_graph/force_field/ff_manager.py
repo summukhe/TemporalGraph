@@ -1,4 +1,5 @@
 import os
+import logging
 import numpy as np
 from .charmm import *
 
@@ -13,10 +14,12 @@ class FFManager:
             rtf_file = os.path.join(cwd, 'data', 'prot_top_charmm.rtf')
             prm_file = os.path.join(cwd, 'data', 'prot_nonbonded_charmm.prm')
             atoms, bonds, donors, acceptors = parse_amino_charmff(rtf_file)
+            self.__logger = logging.getLogger(name="FFManager.ProteinFF")
             self.__atoms = atoms
             self.__bonds = bonds
             self.__donors = donors
             self.__acceptors = acceptors
+            self.__ccelec = 331.843
             self.__name_map = {}
             for n in self.__atoms.keys():
                 if n == 'HSE':
@@ -99,11 +102,17 @@ class FFManager:
                                   residue_name2,
                                   atom_name2,
                                   distance,
-                                  epsilon=1.):
-            distance = 1e-3 if distance < 1e-3 else distance
+                                  epsilon=0.8):
+            distance = np.clip(distance, a_min=1e-3, a_max=None)
             q1 = self.get_charge(residue_name1, atom_name1)
             q2 = self.get_charge(residue_name2, atom_name2)
-            return (q1 * q2)/(distance * epsilon)
+            e = (q1 * q2 * self.__ccelec)/(distance * epsilon)
+            self.__logger.debug("Electrostatic energy: (%s:%s <=>  %s:%s) is [%f]" %(residue_name1,
+                                                                                     atom_name1,
+                                                                                     residue_name2,
+                                                                                     atom_name2,
+                                                                                     e))
+            return e
 
         def calculate_nb_energy(self,
                                 residue_name1,
@@ -117,7 +126,13 @@ class FFManager:
             if self.is_valid_atom(residue_name1, atom_name1) and self.is_valid_atom(residue_name2, atom_name2) and d < 12:
                 rmin = self.__get_radius(residue_name1, atom_name1) + self.__get_radius(residue_name2, atom_name2)
                 eps = np.sqrt(self.__get_epsilon(residue_name1, atom_name1) * self.__get_epsilon(residue_name2, atom_name2))
-                return eps * ((rmin/d)**12 - 2*(rmin/d)**6)
+                e = eps * ((rmin/d)**12 - 2*(rmin/d)**6)
+                self.__logger.debug("Nonbonded energy between (%s:%s <=> %s:%s) [%f]" % (residue_name1,
+                                                                                         atom_name1,
+                                                                                         residue_name2,
+                                                                                         atom_name2,
+                                                                                         e))
+                return e
             return 0
 
         def calculate_energy(self,

@@ -53,7 +53,6 @@ def distance(coord1, coord2):
     return -1
 
 
-
 class Vector3d:
     def __init__(self, x, y, z):
         assert isinstance(x, np.float)

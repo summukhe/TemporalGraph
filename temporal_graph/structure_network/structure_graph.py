@@ -103,7 +103,8 @@ def contact_energy_graph(pdb_struct,
             atom_names2 = pdb_struct.atom_names(r2)
             for atom1 in atom_names1:
                 for atom2 in atom_names2:
-                    d = distance(Coordinate3d(*pdb_struct.xyz(r1,atom1)), Coordinate3d(*pdb_struct.xyz(r2,atom2)))
+                    d = distance(Coordinate3d(*pdb_struct.xyz(r1, atom1)),
+                                 Coordinate3d(*pdb_struct.xyz(r2, atom2)))
                     neighbors[r1][r2] += ff.energy(residue_name1,
                                                    atom1,
                                                    residue_name2,

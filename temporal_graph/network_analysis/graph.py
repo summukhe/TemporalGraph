@@ -273,14 +273,26 @@ class WeightedGraph:
     def in_degree(self, v):
         return self.__G.in_degree(v)
 
-    def in_neighbors(self, v):
-        return self.__G.in_neighbors(v)
+    def in_neighbors(self, v, weight_sorted=True):
+        nbrs = self.__G.in_neighbors(v)
+        if weigth_sorted:
+            weights = []
+            for u in nbrs:
+                weights.append((u, self.weight(u, v)))
+            nbrs=[u for u, w in sorted(weights, key=lambda x: x[1], reverse=True)]
+        return nbrs
 
     def out_degree(self, v):
         return self.__G.out_degree(v)
 
-    def out_neighbors(self, v):
-        return self.__G.out_neigbors(v)
+    def out_neighbors(self, v, weigth_sorted=True):
+        nbrs = self.__G.out_neigbors(v)
+        if weigth_sorted:
+            weights = []
+            for u in nbrs:
+                weights.append((u, self.weight(v, u)))
+            nbrs=[u for u, w in sorted(weights, key=lambda x: x[1], reverse=True)]
+        return nbrs
 
     def is_vertex(self, v):
         return self.__G.is_vertex(v)

@@ -25,19 +25,19 @@ class GeometricPathFilter(PathFilter):
         PathFilter.__init__(self)
         self.__forward_only = forward
         if weight_cutoff is not None:
-            self.__logger.debug('Setting weight cutoff (%f)!!' % weight_cutoff)
             self.__weight_cutoff = weight_cutoff
+            self.__logger.debug('Setting weight cutoff (%f)!!' % self.__weight_cutoff)
         else:
             self.__weight_cutoff = None
 
         if distance_cutoff is not None:
-            self.__logger.debug('Setting distance cutoff!!')
             if isinstance(distance_cutoff, DistanceCutoff):
                 self._distance_cutoff = distance_cutoff
             elif isinstance(distance_cutoff, np.float) or \
                     isinstance(distance_cutoff, np.double) or \
                     isinstance(distance_cutoff, np.int):
                 self._distance_cutoff = DistanceCutoff(def_cutoff=distance_cutoff)
+            self.__logger.debug('Setting distance cutoff (%f)!!' % self._distance_cutoff.cutoff)
         else:
             self._distance_cutoff = None
 
@@ -83,18 +83,28 @@ class GeometricPathFilter(PathFilter):
         return True
 
 
+def path_distance(path1, path2):
+    assert isinstance(path1, list) and isinstance(path2, list)
+    return len(set(path1).intersection(set(path2))) * 1.0/len(set(path1).union(set(path2)))
+
+
 class AllPathIterator:
     def __init__(self,
                  g,
-                 visitor):
+                 visitor,
+                 path_separation=0.4):
         assert isinstance(g, WeightedGraph)
         assert isinstance(visitor, PathFilter)
+        self.__logger = logging.getLogger(name="temporal_graph.AllPathIterator")
         self.__g = deepcopy(g)
         self.__visitor = visitor
         self.__nodes = {v: False for v in g.vertices}
         self.__stack = []
         self.__paths = []
-        self.__stop_vertex = {}
+        self.__stop_vertex = set()
+        self.__visited = set()
+        self.__path_separation = path_separation
+        self.__logger.debug('AllPathIterator instantiated!!')
 
     def is_vertex(self, v):
         return self.__g.is_vertex(v)
@@ -102,6 +112,7 @@ class AllPathIterator:
     def all_path(self,
                  start_vertex,
                  stop_vertex,
+                 max_paths=50,
                  min_path_length=2,
                  max_path_length=None):
         assert self.__g.is_vertex(start_vertex)
@@ -114,19 +125,25 @@ class AllPathIterator:
             assert self.__g.is_vertex(s)
         if max_path_length is None:
             max_path_length = self.__g.order // 2
+        self.__visited = set()
+        self.__paths = []
+        self.__logger.debug("Evaluating all paths for residue: %s" % start_vertex)
         self.__all_paths(start_vertex,
+                         max_paths=max_paths,
                          min_path_length=min_path_length,
                          max_path_length=max_path_length)
         paths = deepcopy(self.__paths)
+        self.__logger.debug("Number of paths found for vertex (%s) is %d" % (start_vertex, len(paths)))
         self.__paths = []
         return paths
 
     def __all_paths(self,
                     start_vertex,
+                    max_paths,
                     min_path_length=2,
                     max_path_length=10):
         assert self.__g.is_vertex(start_vertex)
-        if not self.__nodes[start_vertex]:
+        if (not self.__nodes[start_vertex]) and (len(self.__paths) < max_paths):
             append = False
             if len(self.__stack) > 0:
                 v = start_vertex
@@ -141,15 +158,31 @@ class AllPathIterator:
                 self.__nodes[start_vertex] = True
                 if start_vertex in self.__stop_vertex:
                     if len(self.__stack) >= min_path_length:
-                        path_dict = {'path': deepcopy(self.__stack),
-                                     'weights': []}
-                        for i in range(1, len(self.__stack)):
-                            path_dict['weights'].append(self.__g.weight(self.__stack[i-1], self.__stack[i]))
-                        self.__paths.append(path_dict)
+                        path = deepcopy(self.__stack)
+                        reject = True
+                        for p in path:
+                            if p not in self.__visited:
+                                self.__visited.add(p)
+                                reject = False
+                        if reject:
+                            accept = True
+                            for p in self.__paths:
+                                if path_distance(path, p['path']) > self.__path_separation:
+                                    accept = False
+                            reject = not accept
+                        if not reject:
+                            path_dict = {'path': path[:],
+                                         'weights': []}
+                            for i in range(1, len(self.__stack)):
+                                path_dict['weights'].append(self.__g.weight(self.__stack[i-1], self.__stack[i]))
+                            self.__paths.append(path_dict)
                 elif len(self.__stack) < max_path_length:
                     for v in self.__g.out_neighbors(start_vertex):
-                        self.__all_paths(v, min_path_length=min_path_length)
-                self.__stack.pop(-1)
+                        self.__all_paths(v,
+                                         max_paths=max_paths,
+                                         min_path_length=min_path_length,
+                                         max_path_length=max_path_length)
+                n = self.__stack.pop(-1)
                 self.__nodes[start_vertex] = False
 
 

@@ -11,46 +11,56 @@ __all__ = ['mutation_evaluation', 'MutationEffectScore', 'all_path_mutation_eval
 
 
 class MutationEffectScore:
-    def __init__(self, residue_id, base_amino):
+    def __init__(self, residue_id, base_amino, true_energy=False, npath=1):
         assert isinstance(residue_id, np.int)
+        assert isinstance(npath, np.int) and (npath > 0)
         self.__residue_id = residue_id
         self.__ref_amino = base_amino
         self.__scores = dict()
+        self.__energy = true_energy
+        self.__npath = npath
         self.__logger = logging.getLogger(name="temporal_graph.MutationEffectScore")
 
     @property
     def normalized_score(self):
-        self.__logger.debug('normalized_score called!!')
         ref_aa = self.ref_amino
         all_aa = self.keys
         assert ref_aa in self.__scores
-
-        def solve_rank_order(x):
-            assert isinstance(x, dict)
-            order = list(reversed(sorted([(k, v) for k, v in x.items()], key=lambda p: p[1])))
-            rank, rank_lookup, last_val = 1, {}, None
-            for i, pair in enumerate(order):
-                assert (last_val is None) or (last_val >= pair[1])
-                rank_lookup[pair[0]] = rank
-                if last_val == pair[1]:
-                    rank += 1
-                last_val = pair[1]
-            return rank, rank_lookup
-
-        scores_ref = self.__scores[ref_aa]
-        max_rank, rank_ref = solve_rank_order(scores_ref)
         effect = dict()
+        if self.__energy:
+            ref_score = deepcopy(self.__scores[ref_aa])
+            ref_moment = np.sum(list(ref_score.values()))
+            ref_size = len(ref_score)
+            for aa in self.__scores.keys():
+                tgt_score = deepcopy(self.__scores[aa])
+                tgt_moment = np.sum(list(tgt_score.values()))
+                tgt_size = len(tgt_score)
+                effect[aa] = (tgt_moment * (ref_size/tgt_size) - ref_moment)/self.__npath
+        else:
+            def solve_rank_order(x):
+                assert isinstance(x, dict)
+                order = list(reversed(sorted([(k, v) for k, v in x.items()], key=lambda p: p[1])))
+                rank, rank_lookup, last_val = 1, {}, None
+                for i, pair in enumerate(order):
+                    assert (last_val is None) or (last_val >= pair[1])
+                    rank_lookup[pair[0]] = rank
+                    if last_val == pair[1]:
+                        rank += 1
+                    last_val = pair[1]
+                return rank, rank_lookup
 
-        for aa in all_aa:
-            scores_tgt = self.__scores[aa]
-            mr, rank_tgt = solve_rank_order(scores_tgt)
-            f = mr / max_rank
-            common_set = set(list(rank_ref.keys())).intersection(set(list(rank_tgt.keys())))
-            s = 0
-            for i in common_set:
-                p = (scores_tgt[i] - scores_ref[i])**2
-                s += p * (rank_tgt[i] - rank_ref[i]*f)
-            effect[aa] = s
+            scores_ref = self.__scores[ref_aa]
+            max_rank, rank_ref = solve_rank_order(scores_ref)
+            for aa in all_aa:
+                scores_tgt = self.__scores[aa]
+                mr, rank_tgt = solve_rank_order(scores_tgt)
+                f = mr / max_rank
+                common_set = set(list(rank_ref.keys())).intersection(set(list(rank_tgt.keys())))
+                s = 0
+                for i in common_set:
+                    p = (scores_tgt[i] - scores_ref[i])**2
+                    s += p * (rank_tgt[i] - rank_ref[i]*f)
+                effect[aa] = s
         return effect
 
     @property
@@ -217,10 +227,12 @@ def all_path_mutation_evaluation(pdb_structure,
                                  site2,
                                  method='centrality',
                                  flow_forward=True,
+                                 ntrails=25,
                                  minimum_energy=0.5,
                                  maximum_distance=12,
                                  min_path_length=3,
-                                 max_path_length=10):
+                                 max_path_length=10,
+                                 allowed_path_overlap=0.5):
     logger = logging.getLogger(name="temporal_network.all_path_mutation_evaluation")
     if isinstance(pdb_structure, PDBStructure):
         logger.info('Extracting CA trace from the PDB structure')
@@ -238,7 +250,9 @@ def all_path_mutation_evaluation(pdb_structure,
     all_aminos = valid_amino_acids(one_letter=True)
     curr_residue = structure.get_amino(residue_id)
     result = MutationEffectScore(residue_id,
-                                 structure.get_amino(residue_id).name(one_letter_code=True))
+                                 structure.get_amino(residue_id).name(one_letter_code=True),
+                                 true_energy=True,
+                                 npath=ntrails)
     for aa in all_aminos:
         logger.debug('Mutating residue %d to amino acid %s' % (residue_id, aa))
         structure.set_amino(residue_id, aa_type=aa)
@@ -254,21 +268,25 @@ def all_path_mutation_evaluation(pdb_structure,
                                              source=site1_key,
                                              target=site2_key,
                                              forward_path=flow_forward,
+                                             ntrails=ntrails,
                                              maximum_distance=maximum_distance,
                                              minimum_weight=minimum_energy,
                                              min_path_length=min_path_length,
-                                             max_path_length=max_path_length)
+                                             max_path_length=max_path_length,
+                                             allowed_path_overlap=allowed_path_overlap)
         elif method == "mincut":
             logger.debug('Calculating all path trace based mincut method!!')
             __, scores = all_path_maxflow_score(cg,
                                                 source=site1_key,
                                                 target=site2_key,
                                                 forward_path=flow_forward,
+                                                ntrails=ntrails,
                                                 maximum_distance=maximum_distance,
                                                 minimum_weight=minimum_energy,
                                                 min_path_length=min_path_length,
-                                                max_path_length=max_path_length)
-        result[aa] = scores
+                                                max_path_length=max_path_length,
+                                                allowed_path_overlap=allowed_path_overlap)
+        result[aa] = deepcopy(scores)
     return curr_residue, result
 
 

@@ -1,5 +1,6 @@
 import os
 import sys
+import json
 import logging
 import argparse
 
@@ -36,6 +37,11 @@ if __name__ == "__main__":
                         required=True,
                         metavar='INTEGER', type=int)
 
+    parser.add_argument('--amino', dest='amino',
+                        help='mutated residue type',
+                        required=True,
+                        metavar='AMINO', type=str)
+
     parser.add_argument('--method', dest='method',
                         help="string suggesting type of analysis to be performed ('centrality', 'mincut')",
                         required=False,
@@ -44,11 +50,10 @@ if __name__ == "__main__":
     parser.add_argument('--min-energy', dest='min_energy',
                         help="minimum energy in the contact trail (default: 1.5)",
                         required=False,
-                        metavar="STRING", type=float)
+                        metavar="FLOAT", type=float)
 
     parser.add_argument('--cutoff', dest='cutoff',
-                        help="integer value defining the radius to "
-                             "use for contact cutoff (default: 12)",
+                        help="integer value defining the radius to use for contact cutoff (default: 12)",
                         required=False,
                         metavar='INTEGER', type=int)
 
@@ -71,28 +76,14 @@ if __name__ == "__main__":
                              "in the analysis (default: 10)",
                         type=int)
 
-    parser.add_argument('--ntrails', dest='ntrail',
-                        required=False,
-                        help="Maximum number of path to be used for each site for the "
-                             "centrality analysis (default: 25)",
-                        type=int)
-
-    parser.add_argument('--path-overlap', dest='overlap',
-                        required=False,
-                        help="Allowed overlap distance between paths originated from "
-                             "the same vertex (default: 0.5)",
-                        type=float)
-
     parser.set_defaults(debug=False)
     parser.set_defaults(flow_forward=True)
     parser.set_defaults(chain="A")
     parser.set_defaults(method='centrality')
-    parser.set_defaults(min_energy=2.5)
+    parser.set_defaults(min_energy=1.5)
     parser.set_defaults(cutoff=12)
     parser.set_defaults(min_path_length=3)
     parser.set_defaults(max_path_length=10)
-    parser.set_defaults(ntrail=25)
-    parser.set_defaults(overlap=0.5)
 
     args = parser.parse_args()
 
@@ -132,20 +123,21 @@ if __name__ == "__main__":
         logger.warning('Residue selected should not be part of the site')
 
     logger.debug("Starting mutation analysis!!")
-    curr_residue, result = temporal_graph.all_path_mutation_evaluation(pdb_structure=structure,
-                                                                       residue_id=residue_id,
-                                                                       site1=site1,
-                                                                       site2=site2,
-                                                                       method=args.method,
-                                                                       flow_forward=args.flow_forward,
-                                                                       minimum_energy=args.min_energy,
-                                                                       maximum_distance=args.cutoff,
-                                                                       ntrails=args.ntrail,
-                                                                       min_path_length=args.min_path_length,
-                                                                       max_path_length=args.max_path_length,
-                                                                       allowed_path_overlap=args.overlap)
 
-    fscore = result.normalized_score
+    ca_backbone = temporal_graph.pdb_to_catrace(structure)
+    ca_backbone.set_amino(args.residue, args.amino)
+    g = temporal_graph.contact_graph(ca_backbone, cutoff=args.cutoff, potential='charmm')
 
-    for aa, value in fscore.items():
-        print("%1s %1s %10.5f" % (result.ref_amino, aa, value))
+    site1_key = [ca_backbone.key(r) for r in site1]
+    site2_key = [ca_backbone.key(r) for r in site2]
+
+    __, scores = temporal_graph.all_path_centrality(g,
+                                                    source=site1_key,
+                                                    target=site2_key,
+                                                    forward_path=args.flow_forward,
+                                                    maximum_distance=args.cutoff,
+                                                    minimum_weight=args.min_energy,
+                                                    min_path_length=args.min_path_length,
+                                                    max_path_length=args.max_path_length)
+
+    print(json.dumps(scores, indent=2))
