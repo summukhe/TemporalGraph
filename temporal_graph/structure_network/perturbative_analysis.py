@@ -232,7 +232,8 @@ def all_path_mutation_evaluation(pdb_structure,
                                  maximum_distance=12,
                                  min_path_length=3,
                                  max_path_length=10,
-                                 allowed_path_overlap=0.5):
+                                 allowed_path_overlap=0.5,
+                                 backtrack_fraction=0.5):
     logger = logging.getLogger(name="temporal_network.all_path_mutation_evaluation")
     if isinstance(pdb_structure, PDBStructure):
         logger.info('Extracting CA trace from the PDB structure')
@@ -242,6 +243,8 @@ def all_path_mutation_evaluation(pdb_structure,
     assert isinstance(structure, CaTrace)
     assert method in {'mincut', 'centrality'}
     assert isinstance(site1, list) and isinstance(site2, list)
+    assert isinstance(backtrack_fraction, float) and isinstance(allowed_path_overlap, float)
+    assert (backtrack_fraction >= 0.0) and (backtrack_fraction <= 1.0)
     assert structure.size > 1
     residue_ids = structure.residue_ids
     assert residue_id in residue_ids
@@ -273,7 +276,8 @@ def all_path_mutation_evaluation(pdb_structure,
                                              minimum_weight=minimum_energy,
                                              min_path_length=min_path_length,
                                              max_path_length=max_path_length,
-                                             allowed_path_overlap=allowed_path_overlap)
+                                             allowed_path_overlap=allowed_path_overlap,
+                                             backtrack_fraction=backtrack_fraction)
         elif method == "mincut":
             logger.debug('Calculating all path trace based mincut method!!')
             __, scores = all_path_maxflow_score(cg,
@@ -285,7 +289,8 @@ def all_path_mutation_evaluation(pdb_structure,
                                                 minimum_weight=minimum_energy,
                                                 min_path_length=min_path_length,
                                                 max_path_length=max_path_length,
-                                                allowed_path_overlap=allowed_path_overlap)
+                                                allowed_path_overlap=allowed_path_overlap,
+                                                backtrack_fraction=backtrack_fraction)
         result[aa] = deepcopy(scores)
     return curr_residue, result
 

@@ -103,6 +103,8 @@ class AllPathIterator:
         self.__paths = []
         self.__stop_vertex = set()
         self.__visited = set()
+        self.__retrack = False
+        self.__retrack_length = 0
         self.__path_separation = path_separation
         self.__logger.debug('AllPathIterator instantiated!!')
 
@@ -114,7 +116,8 @@ class AllPathIterator:
                  stop_vertex,
                  max_paths=50,
                  min_path_length=2,
-                 max_path_length=None):
+                 max_path_length=None,
+                 retrack_fraction=0):
         assert self.__g.is_vertex(start_vertex)
         g_bk = None
         if isinstance(self.__visitor, GeometricPathFilter) and self.__visitor.has_weight_cutoff:
@@ -150,10 +153,13 @@ class AllPathIterator:
         if has_path:
             self.__visited = set()
             self.__logger.debug("Evaluating all paths for residue: %s" % start_vertex)
+            self.__retrack = False
+            self.__retrack_length = 0
             self.__all_paths(start_vertex,
                              max_paths=max_paths,
                              min_path_length=min_path_length,
-                             max_path_length=max_path_length)
+                             max_path_length=max_path_length,
+                             retrack_fraction=retrack_fraction)
             paths = deepcopy(self.__paths)
 
         if g_bk is not None:
@@ -167,7 +173,8 @@ class AllPathIterator:
                     start_vertex,
                     max_paths,
                     min_path_length=2,
-                    max_path_length=10):
+                    max_path_length=10,
+                    retrack_fraction=0.5):
         assert self.__g.is_vertex(start_vertex)
         if (not self.__nodes[start_vertex]) and (len(self.__paths) < max_paths):
             append = False
@@ -202,13 +209,26 @@ class AllPathIterator:
                             for i in range(1, len(self.__stack)):
                                 path_dict['weights'].append(self.__g.weight(self.__stack[i-1], self.__stack[i]))
                             self.__paths.append(path_dict)
+                            path_len = int( len(path) * retrack_fraction )
+                            if path_len > 1:
+                                self.__retrack = True
+                                self.__retrack_length = path_len
                             self.__logger.debug("Path found between (%s <-> %s) of length %d" % (path[0], path[-1], len(path)))
                 elif len(self.__stack) < max_path_length:
                     for v in self.__g.out_neighbors(start_vertex):
                         self.__all_paths(v,
                                          max_paths=max_paths,
                                          min_path_length=min_path_length,
-                                         max_path_length=max_path_length)
+                                         max_path_length=max_path_length,
+                                         retrack_fraction=retrack_fraction)
+                        if self.__retrack:
+                            if self.__retrack_length > 0:
+                                self.__retrack_length -= 1
+                            else:
+                                self.__retrack = False
+                                self.__retrack_length = 0
+                        if self.__retrack:
+                            break
                 n = self.__stack.pop(-1)
                 self.__nodes[start_vertex] = False
 

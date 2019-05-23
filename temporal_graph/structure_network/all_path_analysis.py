@@ -15,7 +15,8 @@ def all_path_centrality(g,
                         ntrails=25,
                         min_path_length=3,
                         max_path_length=12,
-                        allowed_path_overlap=0.5):
+                        allowed_path_overlap=0.5,
+                        backtrack_fraction=0.5):
     assert isinstance(g, GeometricGraph3d)
     assert isinstance(source, list)
     assert isinstance(target, list)
@@ -39,7 +40,8 @@ def all_path_centrality(g,
                                         stop_vertex=target,
                                         max_paths=ntrails,
                                         min_path_length=min_path_length,
-                                        max_path_length=max_path_length)
+                                        max_path_length=max_path_length,
+                                        retrack_fraction=backtrack_fraction)
         if len(result) > 0:
             for res in result:
                 assert isinstance(res, dict)
@@ -67,7 +69,8 @@ def all_path_maxflow(g,
                      maximum_distance=8,
                      min_path_length=3,
                      max_path_length=12,
-                     allowed_path_overlap=0.5):
+                     allowed_path_overlap=0.5,
+                     backtrack_fraction=0.5):
     assert isinstance(g, GeometricGraph3d)
     assert isinstance(source, list)
     assert isinstance(target, list)
@@ -89,7 +92,8 @@ def all_path_maxflow(g,
                                         stop_vertex=target,
                                         ntrails=ntrails,
                                         min_path_length=min_path_length,
-                                        max_path_length=max_path_length)
+                                        max_path_length=max_path_length,
+                                        retrack_fraction=backtrack_fraction)
         if len(result) > 0:
             for res in result:
                 assert isinstance(res, dict)
@@ -122,7 +126,8 @@ def all_path_maxflow_score(g,
                            maximum_distance=8,
                            min_path_length=3,
                            max_path_length=12,
-                           allowed_path_overlap=0.5):
+                           allowed_path_overlap=0.5,
+                           backtrack_fraction=0.5):
     cuts = all_path_maxflow(g,
                             source,
                             target,
@@ -132,7 +137,8 @@ def all_path_maxflow_score(g,
                             maximum_distance=maximum_distance,
                             min_path_length=min_path_length,
                             max_path_length=max_path_length,
-                            allowed_path_overlap=allowed_path_overlap)
+                            allowed_path_overlap=allowed_path_overlap,
+                            backtrack_fraction=backtrack_fraction)
     scores, total = {}, 0
     if (cuts is not None) and isinstance(cuts, dict):
         for u in cuts.keys():

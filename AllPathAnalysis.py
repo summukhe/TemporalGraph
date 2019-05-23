@@ -83,6 +83,12 @@ if __name__ == "__main__":
                              "the same vertex (default: 0.5)",
                         type=float)
 
+    parser.add_argument('--backtrack', dest='backtrack',
+                        required=False,
+                        help="Program hack for fast stack unrolling to find non overlapping "
+                             "trails. (Default: 0.5)",
+                        type=float)
+
     parser.set_defaults(debug=False)
     parser.set_defaults(flow_forward=True)
     parser.set_defaults(chain="A")
@@ -93,6 +99,7 @@ if __name__ == "__main__":
     parser.set_defaults(max_path_length=10)
     parser.set_defaults(ntrail=25)
     parser.set_defaults(overlap=0.5)
+    parser.set_defaults(backtrack=0.5)
 
     args = parser.parse_args()
 
@@ -143,7 +150,8 @@ if __name__ == "__main__":
                                                                        ntrails=args.ntrail,
                                                                        min_path_length=args.min_path_length,
                                                                        max_path_length=args.max_path_length,
-                                                                       allowed_path_overlap=args.overlap)
+                                                                       allowed_path_overlap=args.overlap,
+                                                                       backtrack_fraction=args.backtrack)
 
     fscore = result.normalized_score
 
