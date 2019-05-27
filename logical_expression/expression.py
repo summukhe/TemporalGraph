@@ -35,6 +35,14 @@ class Entity:
     def depth(self):
         return 1
 
+    @property
+    def n_variables(self):
+        return 1
+
+    @property
+    def n_operators(self):
+        return 0
+
 
 class Operator(Entity):
     def __init__(self, name, nvar, fn):
@@ -66,6 +74,20 @@ class Operator(Entity):
                 rdepth = 1
             return np.maximum(ldepth, rdepth)
 
+    @property
+    def n_variables(self):
+        return len(set([ent.name for ent in self.get_attached_variable]))
+
+    @property
+    def n_operators(self):
+        if not self.is_set:
+            return 1
+        if self.__type == 'unary':
+            return 1 + self.__children[0].n_operators
+        else:
+            n_l = self.__children[0].n_operators
+            n_r = self.__children[1].n_operators
+            return 1 + n_l + n_r
 
     @property
     def n_children(self):

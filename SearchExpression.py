@@ -27,10 +27,11 @@ if __name__ == "__main__":
 
     exprs, scores = search_expr(y_values=y_values,
                                 x_values=x_values,
-                                dim_limit=3,
-                                nexpr=10,
-                                niter=100)
+                                dim_limit=6,
+                                nexpr=25,
+                                niter=1000,
+                                replicate_control=0.4)
 
     for i, expr in enumerate(exprs):
-        print('%s (%d) => %f' % (expr, expr.depth, scores[i]))
+        print('%s (%d) => %.1f' % (expr, expr_complexity(expr), 100 * (1 - (scores[i] - expr_complexity(expr))/len(y_values))))
 

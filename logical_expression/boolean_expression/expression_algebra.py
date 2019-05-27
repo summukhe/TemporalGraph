@@ -5,7 +5,7 @@ from ..expression import *
 
 
 __version__ = "1.0"
-__all__ = ['build_random_boolean_expression', 'search_expr']
+__all__ = ['build_random_boolean_expression', 'search_expr', 'expr_complexity']
 
 
 def build_random_split_tree(vlist):
@@ -61,6 +61,10 @@ def build_random_boolean_expression(variable_list,
         return recursive_build_random(vlist)
 
 
+def expr_complexity(expr):
+    return np.maximum(expr.n_variables, expr.n_operators)
+
+
 def search_expr(y_values,
                 x_values,
                 dim_limit=3,
@@ -97,13 +101,14 @@ def search_expr(y_values,
             for v in vnames:
                 values[v][0] = x_values[i][v]
             score = score + (y_values[i] != expr.eval())
-        return score + expr.depth
+        return score + expr_complexity(expr)
 
     def search_nexpr(nexpr):
         exprs, scores = list(), list()
         for i in range(nexpr):
             np.random.shuffle(vnames)
-            vconsider = vnames[:dim_limit]
+            nconsider = np.random.randint(low=1, high=dim_limit+1)
+            vconsider = vnames[:nconsider]
             vlist = [variables[k] for k in vconsider]
             exprs.append(build_random_boolean_expression(variable_list=vlist, replicate_control=replicate_control))
         for expr in exprs:
