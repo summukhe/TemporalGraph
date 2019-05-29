@@ -4,7 +4,7 @@ from .expression_utility import *
 
 
 __version__ = "1.0"
-__all__ = ['Numeral', 'Operator', 'Variable']
+__all__ = ['Numeral', 'Operator', 'Variable', 'check_expression_equality']
 
 
 class Entity:
@@ -25,7 +25,7 @@ class Entity:
         return 0
 
     @property
-    def get_attached_variable(self):
+    def attached_variables(self):
         return []
 
     def __str__(self):
@@ -76,7 +76,7 @@ class Operator(Entity):
 
     @property
     def n_variables(self):
-        return len(set([ent.name for ent in self.get_attached_variable]))
+        return len(set([ent.name for ent in self.attached_variables]))
 
     @property
     def n_operators(self):
@@ -121,13 +121,13 @@ class Operator(Entity):
             return self.__fn(self.__children[0].value, self.__children[1].value)
 
     @property
-    def get_attached_variable(self):
+    def attached_variables(self):
         data = []
         if self.is_set:
             if self.__type == 'unary':
-                data = self.__children[0].get_attached_variable
+                data = self.__children[0].attached_variables
             else:
-                data = self.__children[0].get_attached_variable + self.__children[1].get_attached_variable
+                data = self.__children[0].attached_variables + self.__children[1].attached_variables
         return data
 
     def __str__(self):
@@ -180,9 +180,25 @@ class Variable(Entity):
         return self.__value[0]
 
     @property
-    def get_attached_variable(self):
+    def attached_variables(self):
         return [self]
 
     def __str__(self):
         return '%s' % self.name
 
+
+def check_expression_equality(expr1, expr2):
+    assert isinstance(expr1, Entity) and isinstance(expr2, Entity)
+    if isinstance(expr1, Operator) and isinstance(expr2, Operator):
+        if (expr1.n_children != expr2.n_children) or (expr1.name != expr2.name):
+            return False
+        elif expr1.n_children == 1:
+            return check_expression_equality(expr1[0], expr2[0])
+        else:
+            return (check_expression_equality(expr1[0], expr2[0]) and
+                    check_expression_equality(expr1[1], expr2[1])) or \
+                   (check_expression_equality(expr1[0], expr2[1]) and
+                    check_expression_equality(expr1[1], expr2[0]))
+    elif type(expr1).__name__ == type(expr2).__name__:
+        return expr1.name == expr2.name
+    return False

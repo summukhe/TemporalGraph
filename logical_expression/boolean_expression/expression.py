@@ -2,7 +2,22 @@ import numpy as np
 from ..expression import *
 
 __version__ = "1.0"
-__all__ = ['AndOperator', 'OrOperator', 'NotOperator']
+__all__ = ['AndOperator', 'OrOperator', 'NotOperator',
+           'supported_boolean_operators',
+           'unary_boolean_operators',
+           'binary_boolean_operators']
+
+
+def unary_boolean_operators():
+    return ['not']
+
+
+def binary_boolean_operators():
+    return ['and' , 'or']
+
+
+def supported_boolean_operators():
+    return unary_boolean_operators() + binary_boolean_operators()
 
 
 class AndOperator(Operator):

@@ -68,7 +68,7 @@ def expr_complexity(expr):
 def search_expr(y_values,
                 x_values,
                 dim_limit=3,
-                nexpr=20,
+                nexpr=10,
                 replicate_control=0.8,
                 niter=100):
     assert isinstance(y_values, list)
@@ -77,8 +77,9 @@ def search_expr(y_values,
     assert len(x_values) > 1
     assert dim_limit > 0
     assert nexpr > 1
-    n_data = len(y_values)
-    vnames = None
+    n_data, vnames = len(y_values), None
+    n_memory = np.maximum(100, nexpr)
+
     for i in range(n_data):
         assert isinstance(x_values[i], dict)
         if vnames is None:
@@ -103,6 +104,13 @@ def search_expr(y_values,
             score = score + (y_values[i] != expr.eval())
         return score + expr_complexity(expr)
 
+    def sort_score_ordered(exprs, scores):
+        assert isinstance(exprs, list)
+        assert isinstance(scores, list)
+        assert len(exprs) == len(scores)
+        score_args = np.argsort(scores)
+        return [exprs[i] for i in score_args], [scores[i] for i in score_args]
+
     def search_nexpr(nexpr):
         exprs, scores = list(), list()
         for i in range(nexpr):
@@ -113,21 +121,38 @@ def search_expr(y_values,
             exprs.append(build_random_boolean_expression(variable_list=vlist, replicate_control=replicate_control))
         for expr in exprs:
             scores.append(score_expr(expr))
-        score_args = np.argsort(scores)
-        return [exprs[i] for i in score_args], [scores[i] for i in score_args]
+        return sort_score_ordered(exprs, scores)
 
     iter, stop = 0, False
-    exprs , scores = search_nexpr(nexpr)
+    exprs , scores = search_nexpr(n_memory)
 
     while not stop:
         stop = iter > niter
-        new_expr, new_scores = search_nexpr(nexpr)
+        new_expr, new_scores = search_nexpr(n_memory)
         for i in range(nexpr):
             if scores[i] > new_scores[i]:
-                scores[i] = new_scores[i]
-                exprs[i] = new_expr[i]
-                stop = False
+                found = False
+                for expr in exprs:
+                    if check_expression_equality(new_expr[i], expr):
+                        found = True
+                if not found:
+                    scores[i] = new_scores[i]
+                    exprs[i] = new_expr[i]
+                    stop = False
         iter = iter + 1
-    return exprs, scores
+    mod_scores = [s - expr_complexity(exprs[i]) for i, s in enumerate(scores)]
+    exprs, scores = sort_score_ordered(exprs, mod_scores)
+    exprs = exprs[:nexpr]
+    scores = scores[:nexpr]
+    coverage = [0 for i in range(n_data)]
+
+    for i in range(n_data):
+        for v in vnames:
+            values[v][0] = x_values[i][v]
+        for expr in exprs:
+            if expr.eval() == y_values[i]:
+                coverage[i] += 1
+    return exprs, scores, coverage
+
 
 
