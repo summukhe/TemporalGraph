@@ -70,6 +70,16 @@ if __name__ == "__main__":
                         help="Minimum length of the trail to be considered in the analysis (default: 3)",
                         type=int)
 
+    parser.add_argument('--no-edge-retrace', dest='edge_retrace',
+                        required=False,
+                        help="Exclude edge multiple counting!",
+                        action='store_false')
+
+    parser.add_argument('--no-path-filter-reinitialize', dest='path_reinitialize',
+                        required=False,
+                        help='Allow same edge with different source vertices',
+                        action='store_false')
+
     parser.add_argument('--max-trail-length', dest='max_path_length',
                         required=False,
                         help="Maximum length of the trail to be considered "
@@ -84,6 +94,8 @@ if __name__ == "__main__":
     parser.set_defaults(cutoff=12)
     parser.set_defaults(min_path_length=3)
     parser.set_defaults(max_path_length=10)
+    parser.set_defaults(edge_retrace=True)
+    parser.set_defaults(path_reinitialize=True)
 
     args = parser.parse_args()
 
@@ -135,6 +147,8 @@ if __name__ == "__main__":
                                                     source=site1_key,
                                                     target=site2_key,
                                                     forward_path=args.flow_forward,
+                                                    edge_retrace=args.edge_retrace,
+                                                    indpt_path_memory=args.path_reinitialize,
                                                     maximum_distance=args.cutoff,
                                                     minimum_weight=args.min_energy,
                                                     min_path_length=args.min_path_length,

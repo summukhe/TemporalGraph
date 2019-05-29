@@ -12,6 +12,9 @@ class PathFilter:
     def __init__(self):
         pass
 
+    def erase_memory(self):
+        pass
+
     def __call__(self, g, n, n_1, n_2=None):
         return True
 
@@ -19,11 +22,15 @@ class PathFilter:
 class GeometricPathFilter(PathFilter):
     def __init__(self,
                  forward=True,
+                 edge_retrace=True,
                  weight_cutoff=None,
                  distance_cutoff=None):
         self.__logger = logging.getLogger(name='temporal_graph.GeometricPathFilter')
         PathFilter.__init__(self)
         self.__forward_only = forward
+        self.__edge_retrace = edge_retrace
+        self.__edge_memory = dict()
+
         if weight_cutoff is not None:
             self.__weight_cutoff = weight_cutoff
             self.__logger.debug('Setting weight cutoff (%f)!!' % self.__weight_cutoff)
@@ -61,6 +68,9 @@ class GeometricPathFilter(PathFilter):
     def distance_cutoff(self):
         return self._distance_cutoff
 
+    def erase_memory(self):
+        self.__edge_memory = dict()
+
     def __call__(self, g, n, n_1, n_2=None):
         if not isinstance(g, GeometricGraph3d):
             self.__logger.debug("Not a geometric graph!")
@@ -80,6 +90,13 @@ class GeometricPathFilter(PathFilter):
             v2 = connecting_vector(g.attribute(n_2), g.attribute(n_1)).unit_vector
             if dotp(v1, v2) > 0:
                 return False
+
+        if n_1 not in self.__edge_memory:
+            self.__edge_memory[n_1] = dict()
+        if n not in self.__edge_memory[n_1]:
+            self.__edge_memory[n_1][n] = True
+        else:
+            return self.__edge_retrace
         return True
 
 

@@ -10,6 +10,8 @@ def all_path_centrality(g,
                         source,
                         target,
                         forward_path=True,
+                        edge_retrace=True,
+                        indpt_path_memory=True,
                         minimum_weight=0.5,
                         maximum_distance=8,
                         ntrails=25,
@@ -28,6 +30,7 @@ def all_path_centrality(g,
     assert minimum_weight >= 0
     assert maximum_distance > 0
     path_filter = GeometricPathFilter(forward=forward_path,
+                                      edge_retrace=edge_retrace,
                                       weight_cutoff=minimum_weight,
                                       distance_cutoff=maximum_distance)
     path_iterator = AllPathIterator(g,
@@ -36,6 +39,8 @@ def all_path_centrality(g,
 
     all_paths, scores, total = [], [], 0
     for v in source:
+        if indpt_path_memory:
+            path_filter.erase_memory()
         result = path_iterator.all_path(v,
                                         stop_vertex=target,
                                         max_paths=ntrails,
@@ -64,6 +69,7 @@ def all_path_maxflow(g,
                      source,
                      target,
                      forward_path=True,
+                     edge_retrace=True,
                      ntrails=25,
                      minimum_weight=0.5,
                      maximum_distance=8,
@@ -82,6 +88,7 @@ def all_path_maxflow(g,
     assert isinstance(allowed_path_overlap, float)
     assert (allowed_path_overlap >= 0.0) and (allowed_path_overlap <= 1.0)
     path_filter = GeometricPathFilter(forward=forward_path,
+                                      edge_retrace=edge_retrace,
                                       weight_cutoff=minimum_weight,
                                       distance_cutoff=maximum_distance)
     path_iterator = AllPathIterator(g, visitor=path_filter, path_separation=allowed_path_overlap)
@@ -121,6 +128,7 @@ def all_path_maxflow_score(g,
                            source,
                            target,
                            forward_path=True,
+                           edge_retrace=True,
                            ntrails=25,
                            minimum_weight=0.5,
                            maximum_distance=8,
@@ -132,6 +140,7 @@ def all_path_maxflow_score(g,
                             source,
                             target,
                             forward_path=forward_path,
+                            edge_retrace=edge_retrace,
                             ntrails=ntrails,
                             minimum_weight=minimum_weight,
                             maximum_distance=maximum_distance,
