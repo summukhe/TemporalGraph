@@ -42,7 +42,7 @@ if __name__ == "__main__":
                         metavar="STRING", type=str)
 
     parser.add_argument('--min-energy', dest='min_energy',
-                        help="minimum energy in the contact trail (default: 1.5)",
+                        help="minimum energy in the contact trail (default: 2.5)",
                         required=False,
                         metavar="STRING", type=float)
 
@@ -83,6 +83,11 @@ if __name__ == "__main__":
                              "the same vertex (default: 0.5)",
                         type=float)
 
+    parser.add_argument('--no-path-retrace', dest='retrace_path',
+                        required=False,
+                        help="Prohibit edge retrace, by default it is false",
+                        action="store_false")
+
     parser.add_argument('--backtrack', dest='backtrack',
                         required=False,
                         help="Program hack for fast stack unrolling to find non overlapping "
@@ -100,6 +105,7 @@ if __name__ == "__main__":
     parser.set_defaults(ntrail=25)
     parser.set_defaults(overlap=0.5)
     parser.set_defaults(backtrack=0.5)
+    parser.set_defaults(retrace_path=True)
 
     args = parser.parse_args()
 
@@ -145,6 +151,7 @@ if __name__ == "__main__":
                                                                        site2=site2,
                                                                        method=args.method,
                                                                        flow_forward=args.flow_forward,
+                                                                       retrace_path=args.retrace_path,
                                                                        minimum_energy=args.min_energy,
                                                                        maximum_distance=args.cutoff,
                                                                        ntrails=args.ntrail,

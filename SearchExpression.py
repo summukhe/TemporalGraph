@@ -23,7 +23,7 @@ if __name__ == "__main__":
             return 0
 
     for i in x.index:
-        y_values.append(x.loc[i, 'rna'])
+        y_values.append(x.loc[i, 'helicase'])
         x_values.append({v: process_data(x.loc[i, v]) for v in var_cols})
 
     exprs, scores, coverage = search_expr(y_values=y_values,
