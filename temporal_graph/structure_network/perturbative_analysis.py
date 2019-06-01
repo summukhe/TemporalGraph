@@ -35,7 +35,7 @@ class MutationEffectScore:
                 tgt_score = deepcopy(self.__scores[aa])
                 tgt_moment = np.sum(list(tgt_score.values()))
                 tgt_size = len(tgt_score)
-                effect[aa] = (tgt_moment * (ref_size/tgt_size) - ref_moment)/self.__npath
+                effect[aa] = (tgt_moment * (ref_size/tgt_size) - ref_moment)/self.__npath if self.__npath > 0 else 0.0
         else:
             def solve_rank_order(x):
                 assert isinstance(x, dict)

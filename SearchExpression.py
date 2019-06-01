@@ -23,17 +23,18 @@ if __name__ == "__main__":
             return 0
 
     for i in x.index:
-        y_values.append(x.loc[i, 'helicase'])
+        y_values.append(x.loc[i, 'atp'])
         x_values.append({v: process_data(x.loc[i, v]) for v in var_cols})
 
-    exprs, scores, coverage = search_expr(y_values=y_values,
-                                          x_values=x_values,
-                                          dim_limit=3,
-                                          nexpr=20,
-                                          niter=500,
-                                          replicate_control=1.0)
+    exprs, scores, coverage, entropy = search_expr(y_values=y_values,
+                                                   x_values=x_values,
+                                                   dim_limit=3,
+                                                   nexpr=100,
+                                                   niter=750,
+                                                   replicate_control=1.0,
+                                                   return_entropy=True)
 
-    print(coverage)
     for i, expr in enumerate(exprs):
-        print('%s (%d) => %.1f' % (expr, expr_complexity(expr), 100 * (1 - (scores[i]/len(y_values)))))
+        if entropy[i] > 0.38:
+            print('%s (%d) => %.1f' % (expr, expr_complexity(expr), 100 * (1 - (scores[i]/len(y_values)))))
 

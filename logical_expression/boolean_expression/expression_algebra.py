@@ -70,7 +70,8 @@ def search_expr(y_values,
                 dim_limit=3,
                 nexpr=10,
                 replicate_control=0.8,
-                niter=100):
+                niter=100,
+                return_entropy=False):
     assert isinstance(y_values, list)
     assert isinstance(x_values, list)
     assert len(x_values) == len(y_values)
@@ -145,14 +146,30 @@ def search_expr(y_values,
     exprs = exprs[:nexpr]
     scores = scores[:nexpr]
     coverage = [0 for i in range(n_data)]
-
+    entropy = [[] for x in exprs]
     for i in range(n_data):
         for v in vnames:
             values[v][0] = x_values[i][v]
-        for expr in exprs:
+        for j, expr in enumerate(exprs):
             if expr.eval() == y_values[i]:
                 coverage[i] += 1
-    return exprs, scores, coverage
+                entropy[j].append(y_values[i])
 
+    if return_entropy is False:
+        return exprs, scores, coverage
 
+    def calc_entropy(x):
+        assert isinstance(x, list)
+        n = len(x)
+        count = dict()
+        for v in x:
+            if v not in count:
+                count[v] = 0
+            count[v] += 1./n
+        e = 0
+        for v in count:
+            e = e - count[v]*np.log(count[v])
+        return e
+
+    return exprs, scores, coverage, [calc_entropy(x) for x in entropy]
 
